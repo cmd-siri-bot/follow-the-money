@@ -24,6 +24,17 @@ def normalize_whitespace(s: str) -> str:
     return _WS_RE.sub(" ", s.strip())
 
 
+def normalize_postal(s: str) -> str:
+    """Uppercase, no internal space -- e.g. 'M5T 2C8' and 'm5t2c8' both
+    become 'M5T2C8'. Source data is inconsistent on the space (~76% of
+    lobbyist_subject_matters.csv's registrant_PostalCode rows have one,
+    donors.csv's postal_code column never does), so any postal-code
+    equality check across those two sources needs both sides run through
+    this first -- comparing raw strings silently drops every
+    space-formatted registrant from ever matching a donor."""
+    return re.sub(r"\s+", "", (s or "").strip()).upper()
+
+
 def strip_accents_for_matching(s: str) -> str:
     """Fold to ASCII for fuzzy/lookup matching only -- never for display.
     e.g. 'Bailão' -> 'Bailao'. Preserves the original elsewhere."""

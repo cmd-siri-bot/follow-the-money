@@ -43,7 +43,7 @@ The project owner did the devtools inspection manually. Answers to the five gati
 
 All five now live in `data/raw/efd_contributions/`. **Practical consequence for Phase 1/2:** any councillor elected via by-election needs their contributions pulled from that by-election's file, not the 2022 general — a join on "which election put this specific sitting councillor in office" has to happen before donor classification, not after.
 
-**Data quality note:** the mayoral by-election file has visibly mangled non-ASCII characters in some names (e.g. "Bail[garbled]o, Ana" instead of "Bailão, Ana") — a source-side encoding issue in the export, not a `pandas`/`xlrd` reading problem (confirmed: the 2022 general file has zero mangled rows, so it's inconsistent across exports). Needs a cleanup pass in Phase 1, likely a manual lookup table for affected names since the correct character isn't recoverable from the corrupted byte.
+**Data quality note (retracted):** I initially flagged what looked like mangled non-ASCII characters in the mayoral by-election file (e.g. "Bail[garbled]o, Ana"). Checked the actual Unicode code point during Phase 1 parsing — it's `U+00E3` ("ã"), correctly encoded. The name is genuinely "Bailão, Ana." The garbling was my terminal's display limitation, not a problem in the data. No cleanup needed.
 
 ## Step 4 — Supporting datasets (CKAN)
 All four resolved. Details:
@@ -66,7 +66,7 @@ All four steps came in well under the 3-hour budget, and Step 3 — expected to 
 - The site withholds full street addresses (postal code only) — weakens the address-clustering signal `STRATEGY.md` section 3.1 was counting on. Needs reflecting in `docs/02`'s method.
 - The "Export" button plus a blank name field turns the entire scraping problem into a single bulk download per election — the opposite of what the strategy doc's risk assessment expected.
 - By-elections (4 of them) mean "who donated to currently-sitting councillors" isn't answerable from the 2022 general file alone — by-election winners' donor records live in separate election-scoped exports.
-- One export (`2023_mayor_byelection.xls`) has corrupted non-ASCII characters in some names; the others don't. Inconsistent, source-side, needs manual cleanup.
+- (Retracted during Phase 1) What looked like a corrupted-character data issue in one export turned out to be my own terminal failing to render an accented letter correctly — the underlying data was fine all along.
 
 ## Go/no-go
 **GO — full scope, all 26 wards plus mayor.** Every dependency in section 4 of `STRATEGY.md` is now verified, not assumed. The classification module (`docs/02`) remains the critical path, exactly as the strategy doc predicted — extraction turned out to be the easy part, not the hard part.

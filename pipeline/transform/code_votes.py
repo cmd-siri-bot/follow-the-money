@@ -82,6 +82,21 @@ EXCLUDE_KEYWORD_PATTERNS = [
     r"\boperating\s+budget\b",
     r"\btransit\s+(planning|project|expansion)\b",
     r"\bparkland\s+acquisition\b",
+    # "Release Section 37/42 funds" is spending money already collected from a
+    # PAST development approval -- it is not a decision on a development
+    # application, unlike a Section 37 AGREEMENT (which is). Found via manual
+    # review of the 87 low-confidence items (docs/08-decision-log.md,
+    # 2026-08-02): 5 "Authorization to Release Section 37/42 Funds..." items
+    # were being caught by the section_37_cbc keyword and miscategorized.
+    r"\brelease\s+section\s+(37|42)\s+funds\b",
+]
+
+# Patterns that force exclusion even when a development keyword also
+# matches (unlike EXCLUDE_KEYWORD_PATTERNS, which only excludes when NO
+# development keyword fired). "Release Section 37/42 funds" specifically
+# collides with the section_37_cbc keyword itself, so it needs to win.
+HARD_EXCLUDE_PATTERNS = [
+    r"\brelease\s+section\s+(37|42)\s+funds\b",
 ]
 
 _ws = re.compile(r"\s+")
@@ -98,6 +113,10 @@ def extract_code(agenda_item_number):
 
 def classify_text(title):
     text = normalize_text(title)
+
+    if any(re.search(p, text) for p in HARD_EXCLUDE_PATTERNS):
+        return False, 0.85, [], "excluded (release of previously-collected Section 37/42 funds -- a spending decision, not a decision on a development application)"
+
     matched_categories = [
         label for label, patterns in DEV_KEYWORD_CATEGORIES
         if any(re.search(p, text) for p in patterns)

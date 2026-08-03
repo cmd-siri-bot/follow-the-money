@@ -1,0 +1,27 @@
+member_id,ward_number,office,total_raised_net,dev_linked_net,dev_affiliation_share,n_donors,threshold_setting,ward_development_intensity
+Olivia Chow,0,Mayor,1461370.56,102500.0,0.07013963658881975,3212,0.5,0.0
+Vincent Crisanti,1,Councillor,82200.0,0.0,0.0,90,0.5,75.0
+Stephen Holyday,2,Councillor,6200.0,0.0,0.0,6,0.5,84.0
+Amber Morley,3,Councillor,65712.32,0.0,0.0,212,0.5,350.0
+Gord Perks,4,Councillor,56651.0,0.0,0.0,122,0.5,163.0
+Frances Nunziata,5,Councillor,83850.0,0.0,0.0,110,0.5,267.0
+James Pasternak,6,Councillor,87322.0,8200.0,0.0939053159570326,100,0.5,106.0
+Anthony Perruzza,7,Councillor,81550.0,26400.0,0.3237277743715512,93,0.5,88.0
+Mike Colle,8,Councillor,79855.01,7200.0,0.09016340991003569,114,0.5,451.0
+Alejandra Bravo,9,Councillor,81289.45,0.0,0.0,231,0.5,195.0
+Ausma Malik,10,Councillor,94070.46,6000.0,0.06378197789189083,259,0.5,303.0
+Dianne Saxe,11,Councillor,64944.58,0.0,0.0,152,0.5,255.0
+Josh Matlow,12,Councillor,79853.07,4223.02,0.05288487969216461,208,0.5,439.0
+Chris Moise,13,Councillor,88059.8,0.0,0.0,142,0.5,525.0
+Paula Fletcher,14,Councillor,75877.0,0.0,0.0,194,0.5,174.0
+Jon Burnside,16,Councillor,82875.0,4800.0,0.0579185520361991,112,0.5,101.0
+Shelley Carroll,17,Councillor,64775.0,3600.0,0.05557699729834041,95,0.5,109.0
+Lily Cheng,18,Councillor,68213.12,0.0,0.0,180,0.5,312.0
+Brad Bradford,19,Councillor,99460.0,17800.0,0.17896641866076815,153,0.5,115.0
+Michael Thompson,21,Councillor,96500.0,3600.0,0.03730569948186528,117,0.5,115.0
+Nick Mantas,22,Councillor,83200.0,3600.0,0.04326923076923077,79,0.5,103.0
+Jamaal Myers,23,Councillor,35976.0,0.0,0.0,93,0.5,56.0
+Paul Ainslie,24,Councillor,36350.0,0.0,0.0,53,0.5,94.0
+Rachel Chernos Lin,15,Councillor,75785.43,6000.0,0.07917089076356762,181,0.5,271.0
+Parthi Kandavel,20,Councillor,75985.0,0.0,0.0,117,0.5,129.0
+Neethan Shan,25,Councillor,61876.0,0.0,0.0,147,0.5,69.0

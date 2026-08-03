@@ -394,7 +394,7 @@ def write_donors(rows):
         "donor_id", "name_raw", "name_norm", "address_raw", "address_norm",
         "postal_code", "amount", "amount_returned", "amount_net",
         "date_received", "contribution_type",
-        "candidate", "office", "development_affiliation_score",
+        "candidate", "office", "election", "development_affiliation_score",
         "signals_fired", "basis", "manually_reviewed", "reviewer_note",
     ]
     DONORS_OUT.parent.mkdir(parents=True, exist_ok=True)

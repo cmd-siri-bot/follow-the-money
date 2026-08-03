@@ -8,6 +8,29 @@ Scope: contributions to Councillor and Mayor candidates only (school board
 trustees and Third Party Advertisers are out of scope for v1 per docs/01
 and docs/08's "Third-party advertisers deferred to v2" decision).
 
+Nets out returned contributions: `amount_net = amount - amount_returned`
+(floored at 0) is used for every score computation, clustering total, and
+near-limit check. Found during manual adjudication (docs/08-decision-log.md,
+2026-08-03): 64 non-self-contribution rows ($80,936 total) had a contribution
+fully or partially returned to the donor -- e.g. an over-the-legal-limit
+gift the campaign rejected. Using the gross `amount` credited these donors
+with money the campaign never actually kept, inflating "top donor" rankings
+and cluster totals. The raw `amount` (gross, as originally disclosed) and
+`amount_returned` are both preserved in the output alongside `amount_net`
+for transparency -- a hostile reviewer should be able to see all three.
+
+Also excludes `contributor_type` in {"Candidate", "Candidate Spouse"} --
+found during manual adjudication (docs/08-decision-log.md, 2026-08-03):
+these are a candidate funding their own campaign or their spouse doing so,
+under a separate (much higher) contribution limit than third-party donors.
+They are definitionally not "development industry money" in the sense
+STRATEGY.md's thesis is about, and their unusually large dollar amounts
+(candidate self-funding isn't capped at $1,200/$2,500 like third-party
+giving) were dominating the top of the "top donors by dollar value" audit
+list, crowding out genuine third-party donors. 5.2% of total Councillor/
+Mayor contribution dollars ($819,648 of $15,724,366) came from this
+category.
+
 --- Signal 1: postal-code clustering (per candidate) ---
 Per docs/08-decision-log.md (2026-08-02, "Contribution data comes in postal
 code, not full address"): the EFD export gives postal code only, not street
@@ -103,6 +126,7 @@ DONORS_OUT = ROOT / "data" / "interim" / "donors.csv"
 CLUSTERS_OUT = ROOT / "data" / "interim" / "donor_clusters.csv"
 
 IN_SCOPE_OFFICES = {"Councillor", "Mayor"}
+EXCLUDED_CONTRIBUTOR_TYPES = {"Candidate", "Candidate Spouse"}
 
 ADDRESS_CLUSTER_MIN_DONORS = 3
 ADDRESS_CLUSTER_MIN_AMOUNT = 3000.0
@@ -129,7 +153,11 @@ def make_donor_id(name_norm: str, postal_code_norm: str) -> str:
 def load_contributions():
     with CONTRIBUTIONS_CSV.open("r", newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
-    return [r for r in rows if r["office"] in IN_SCOPE_OFFICES]
+    return [
+        r for r in rows
+        if r["office"] in IN_SCOPE_OFFICES
+        and r["contributor_type"] not in EXCLUDED_CONTRIBUTOR_TYPES
+    ]
 
 
 def load_reference():
@@ -156,6 +184,12 @@ def enrich(rows):
             r["_amount"] = float(r["amount"]) if r["amount"] else 0.0
         except ValueError:
             r["_amount"] = 0.0
+        try:
+            returned = float(r["amount_returned"]) if r["amount_returned"] else 0.0
+        except ValueError:
+            returned = 0.0
+        r["_amount_returned"] = returned
+        r["_amount_net"] = max(r["_amount"] - returned, 0.0)
     return rows
 
 
@@ -177,14 +211,14 @@ def compute_address_clusters(rows):
     clusters = []
     for (candidate, postal), idxs in groups.items():
         donor_ids = {rows[i]["_donor_id"] for i in idxs}
-        total_amount = sum(rows[i]["_amount"] for i in idxs)
+        total_amount = sum(rows[i]["_amount_net"] for i in idxs)
         if len(donor_ids) < ADDRESS_CLUSTER_MIN_DONORS and total_amount < ADDRESS_CLUSTER_MIN_AMOUNT:
             continue
 
         near_limit_count = 0
         for i in idxs:
             limit = CONTRIBUTION_LIMITS.get(rows[i]["office"], 1200.0)
-            if rows[i]["_amount"] >= NEAR_LIMIT_FRACTION * limit:
+            if rows[i]["_amount_net"] >= NEAR_LIMIT_FRACTION * limit:
                 near_limit_count += 1
         near_limit_share = near_limit_count / len(idxs)
 
@@ -242,7 +276,7 @@ def compute_temporal_clusters(rows):
                 limit = CONTRIBUTION_LIMITS.get(rows[i]["office"], 1200.0)
                 near_limit = sum(
                     1 for j in window_idxs
-                    if rows[j]["_amount"] >= NEAR_LIMIT_FRACTION * limit
+                    if rows[j]["_amount_net"] >= NEAR_LIMIT_FRACTION * limit
                 )
                 flagged[i] = (len(donor_ids), near_limit)
 
@@ -251,7 +285,7 @@ def compute_temporal_clusters(rows):
                     seen_windows.add(window_key)
                     start_d = min(rows[j]["_date"] for j in window_idxs)
                     end_d = max(rows[j]["_date"] for j in window_idxs)
-                    total_amount = sum(rows[j]["_amount"] for j in window_idxs)
+                    total_amount = sum(rows[j]["_amount_net"] for j in window_idxs)
                     clusters.append({
                         "cluster_type": "temporal",
                         "cluster_key": f"{candidate}|{start_d}|{end_d}",
@@ -341,6 +375,8 @@ def classify(rows, reference_by_key):
         r["address_raw"] = ""  # not available -- postal code only, see postal_code_raw
         r["address_norm"] = ""
         r["postal_code"] = r["_postal"]["postal_code_norm"] or r["postal_code"]
+        r["amount_returned"] = r["_amount_returned"]
+        r["amount_net"] = r["_amount_net"]
         r["development_affiliation_score"] = score
         r["signals_fired"] = ";".join(signals_fired) if signals_fired else "none"
         r["basis"] = "; ".join(basis_parts) if basis_parts else (
@@ -356,7 +392,8 @@ def classify(rows, reference_by_key):
 def write_donors(rows):
     fields = [
         "donor_id", "name_raw", "name_norm", "address_raw", "address_norm",
-        "postal_code", "amount", "date_received", "contribution_type",
+        "postal_code", "amount", "amount_returned", "amount_net",
+        "date_received", "contribution_type",
         "candidate", "office", "development_affiliation_score",
         "signals_fired", "basis", "manually_reviewed", "reviewer_note",
     ]

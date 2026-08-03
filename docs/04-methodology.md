@@ -12,15 +12,21 @@ Fill in and commit *before* Phase 3.
 
 **Unit of analysis:** councillor (n ≈ 26, plus mid-term membership changes).
 
-**Primary independent variable:** share of total 2022 campaign contributions with `development_affiliation_score` ≥ threshold. Base threshold: _____ (set before running).
+**Primary independent variable:** `dev_affiliation_share` — for each sitting member, the share (by dollar value, `amount_net`) of their in-scope campaign contributions (Councillor/Mayor office, `contributor_type` = Individual only — self/spouse funding excluded per docs/08-decision-log.md 2026-08-03) with `development_affiliation_score` ≥ threshold. **Base threshold: 0.5** — set 2026-08-03, before running. 0.5 requires at least one fully corroborated signal (the address+temporal "coordinated-firm pattern" alone scores 0.75; a corroborated name match alone scores 0.35 combined with either structural signal; an uncorroborated name match alone, 0.15, does not clear 0.5). Per docs/02's sensitivity-analysis requirement, this also gets run at a stricter and a more permissive threshold and all three are reported (see Sensitivity analysis, below) — 0.5 is the base setting only, not the sole result.
 
-**Primary dependent variable:** proportion of pro-development votes on included development items.
+**Contributions are attributed per-member using `member_terms.csv`'s `source_election`** (docs/08-decision-log.md 2026-08-02, "By-elections require separate contribution exports"): the 2022 general campaign for members elected then, the relevant by-election campaign for the four members who weren't (Kandavel, Chernos Lin, Shan, Chow) — never a blend of both. Kandavel's losing 2022 Ward 20 run is excluded from his figure per the same log entry ("donor base = the campaign that won the seat they currently hold").
 
-**Primary test:** _____ (specify: Spearman correlation / OLS with controls / logistic at vote level with member random effects).
+**Primary dependent variable:** `pro_dev_vote` (binary) at the individual vote level, from `votes_coded.csv` where `included = True` — i.e., Adopt-type motions on development items whose title gave an unambiguous approve/refuse signal, with the member not absent. **Set 2026-08-03: given this is only 2.6% of all recorded votes (1,176 of 45,665 — see docs/08-decision-log.md 2026-08-02, "Variable 2... a real, large coverage gap"), this specification will be rerun if the motion-text scrape (still open) meaningfully grows the included set, and both versions will be reported side by side, not just the later one.**
 
-**Controls:** at minimum, ward development intensity (applications per ward, 2022–2026). Optionally: total funds raised, incumbency, ward density.
+**Primary test: logistic regression at the vote level** — `pro_dev_vote ~ dev_affiliation_share + ward_development_intensity`, standard errors clustered by member (`member_id`), per docs/04's own reasoning: more power than the member-level correlation and it handles the unbalanced number of included votes per member (some members have only 1-2 included votes given the 2.6% rate; a member-level correlation alone would treat that member's single vote as equally informative as another member's twelve, which clustering handles more honestly). **Set 2026-08-03.** The member-level Spearman correlation (`dev_affiliation_share` vs. each member's own pro-development vote rate, n≈26) is reported alongside as the illustrative/secondary view, exactly as docs/04 originally suggested — not as the headline.
 
-**Decision rule:** _____ (state what result would count as supporting, refuting, or failing to distinguish).
+**Controls:** ward development intensity (applications per ward, 2022–2026, from `development_applications.csv`'s `ward_number`/`date_submitted`) — required minimum, included in the base specification. Total funds raised — included as a secondary control if it does not produce unstable collinearity with `dev_affiliation_share` (checked, not assumed). Incumbency and ward density — **not included in v1**: incumbency would require pulling the 2018–2022 vote record (resource ID logged in docs/01 but never fetched) to determine which members served the prior term, out of scope for this pass; ward density was never sourced. Both logged here as named, deliberate omissions rather than silent gaps.
+
+**Decision rule, set 2026-08-03:**
+- **H1 supported** if the `dev_affiliation_share` coefficient is positive with a 95% CI excluding zero, after controlling for ward development intensity, **and** this holds at 2 of the 3 sensitivity thresholds (strict/base/permissive).
+- **H1 refuted** if the coefficient is statistically indistinguishable from zero, or negative, across all three thresholds.
+- **Result reported as "the data cannot distinguish these hypotheses"** if the direction of the effect flips across the three thresholds, or if the 95% CI at the base threshold is wide enough to span both an economically meaningful positive effect and an economically meaningful negative effect (i.e., the interval doesn't rule out either "money predicts votes" or "money predicts nothing" as the true state).
+- In every case: leave-one-out diagnostics (member-level) are run and published alongside the headline result per docs/04's own n≈26 warning, regardless of which of the three outcomes above obtains.
 
 ---
 

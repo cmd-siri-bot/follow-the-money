@@ -261,6 +261,22 @@ Built `specification_enriched.py` / `sensitivity_enriched.py` / `diagnostics_enr
 **Not committed** -- new files (`pipeline/transform/extract_role_name.py`, the `build_knowledge_graph.py`/`normalize_names.py` edits, `pipeline/analyze/kg_adjudicate_applicant_overlaps.py`, regenerated `data/interim/kg_entities.csv`/`kg_edges.csv`, `data/processed/kg_member_summary.csv`, `audit/kg_corroborated_overlaps_review.csv`) are sitting uncommitted per the standing "only commit when explicitly asked" rule.
 
 **Open questions for next time:**
-- The 14 owner-only org cross-validation hits (CP REIT, Manulife, Crestview, Brad-Jay, etc.) haven't been individually adjudicated the way the original 8 registrant-donor pairs were -- worth a manual read before treating any of them as a real finding.
 - 142 of the 150 rows in the new `kg_corroborated_overlaps_review.csv` have never had human eyes on them (only the original 8 have prior review). This is now the single largest un-reviewed population in the whole project.
 - Ontario Business Registry pull -- explicitly deferred by the user this session until the core project is complete; do not start without being asked.
+
+## 2026-08-03 · Owner-only org overlaps: LLM first-pass adjudication
+
+**Built:** `pipeline/analyze/kg_adjudicate_owner_org_overlaps.py` -> `audit/kg_owner_org_overlap_review.csv`, a first-pass narrative note for each of the 14 owner-only org cross-validation hits flagged above (same pattern as `kg_adjudicate_overlaps.py`'s original 8, but computed rather than hand-transcribed per row). The one deliberate refinement: `lobbied_office` contacts are filtered to the *same subject_matter_number* as the represents/lobbies_for edge tying the registrant to that specific owner org -- several of the registrants involved (Tristan Downe-Dewdney, Amir Remtulla, Aidan Grove-White) have hundreds of total lobbying contacts across many unrelated clients, and reporting that raw total next to one property would misattribute unrelated activity to this specific ownership relationship.
+
+**What the 14 actually look like, read in full:**
+- **Crestview Investment Corporation** (245 Eglinton Ave E) is the standout: registrant Tristan Downe-Dewdney logged 42 contacts to a single councillor, Rachel Chernos Lin, tied to this exact subject matter, spanning a full year (2025-07-17 to 2026-07-16) -- the highest same-subject-matter contact volume to one office found among the 14.
+- **Pinemount Developments Ltd.** (3406-3434 Weston Road) is represented in part by Joe Mihevc -- the same person named in the prior session's registrant-donor adjudication (donated to both Matlow's and Perruzza's 2023 mayoral bids) -- with 11 same-subject-matter contacts across 11 councillors in a tight May-June 2025 window.
+- **Manulife Ontario Property Portfolio Inc.** (75-81 Billy Bishop Way) shows a distinctive same-day pattern: 3 different registrants (2 consultants + 1 in-house executive) each independently logged exactly 1 contact to Josh Matlow, all on 2022-11-17.
+- Downe-Dewdney also appears on **2724471 Ontario Inc.** and **Microbjo Properties Inc.**, two more of the 14 -- worth reading as "one very active development lobbyist shows up three times," not three independent discoveries.
+- 5 of the 14 (Queen Kingston Holdings, Parc Downsview Park, SLH Lakeshore, 12723638 Canada, and one of CP REIT's five subject matters) show **zero** same-subject-matter lobbied-office contacts -- an org existing in both tables doesn't by itself mean an access pattern exists.
+- **Toronto Community Housing Corporation** is flagged as structurally different from the other 13: it's a public, city-owned arm's-length agency, not a private developer, and its 12 registrants are overwhelmingly typed "subsidiary_company"/"other" (hired consultants on the long-running Regent Park redevelopment) rather than "client." Read separately from the private-ownership cases above it.
+- **Parc Downsview Park Inc.** is also a federal Crown corporation, same caveat.
+
+**Consequence:** of the 14, roughly a third show a real, concentrated same-subject-matter contact pattern worth a closer look (Crestview, Pinemount, Manulife); about a third are thin or empty; and two (TCHC, Parc Downsview) aren't really "private developer" cases at all despite matching the org-key merge. `reviewer_verdict`/`reviewer_note` left blank for the user's own read, same standard as every other adjudication file here -- this is a first cut, not a finding to publish from directly.
+
+**Not committed yet** -- `pipeline/analyze/kg_adjudicate_owner_org_overlaps.py` and `audit/kg_owner_org_overlap_review.csv` are new, uncommitted files.

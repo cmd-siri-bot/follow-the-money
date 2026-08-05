@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Data status — TorontoSpends{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>Data status</h1>
+    <p class="hero-sub">When each dataset behind this site was last pulled from the City, and how many rows it covers. See <a href="{% url 'methodology' %}">methodology</a> for what these datasets do and don't tell you.</p>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Dataset</th>
+                <th>Rows</th>
+                <th>Earliest pull</th>
+                <th>Most recent pull</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in datasets %}
+            <tr>
+                <td>{{ d.label }}</td>
+                <td>{{ d.row_count|default:0 }}</td>
+                <td>{{ d.earliest|date:"Y-m-d"|default:"—" }}</td>
+                <td>{{ d.latest|date:"Y-m-d"|default:"—" }}</td>
+                <td><a href="{{ d.source_url }}">open.toronto.ca</a></td>
+            </tr>
+            {% if d.known_issue %}
+            <tr><td colspan="5" class="source-note">{{ d.known_issue }}</td></tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p class="source-note">"Pull date" is when this site's own copy was fetched from the City's open data portal, not when the City itself last updated the underlying file — the City can and does update a dataset without this site knowing until the next pull. Datasets are currently refreshed manually, not on an automatic schedule.</p>
+{% endblock %}

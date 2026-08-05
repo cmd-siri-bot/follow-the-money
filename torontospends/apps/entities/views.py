@@ -1,6 +1,7 @@
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Max, Min, Q, Sum
 from django.shortcuts import get_object_or_404, render
 
+from apps.annotation.models import Correction
 from apps.budget.models import FactBudgetLine
 from apps.grants.models import FactGrant
 from apps.lobbying.models import FactLobbyingCommunication, FactLobbyingRegistration
@@ -184,3 +185,52 @@ def entity_detail(request, entity_id):
         "grants_received": grants_received,
     }
     return render(request, "entities/detail.html", context)
+
+
+# Every dataset the site publishes, for /status -- pulled from the
+# retrieved_at already stamped on every SourcedFact row rather than a
+# separate freshness table, since that timestamp is the actual freshness
+# signal and duplicating it would just be a second place to go stale.
+DATASETS = [
+    {
+        "label": "Operating budget",
+        "queryset": FactBudgetLine.objects,
+        "source_url": "https://open.toronto.ca/dataset/budget-operating-budget-program-summary-by-expenditure-category/",
+        "known_issue": "The City's own file was last refreshed 2026-02-25, and no FY2026 file has been published yet -- this site can't be fresher than its source.",
+    },
+    {
+        "label": "Lobbying registrations",
+        "queryset": FactLobbyingRegistration.objects,
+        "source_url": "https://open.toronto.ca/dataset/lobbyist-registry/",
+        "known_issue": "",
+    },
+    {
+        "label": "Lobbying communications",
+        "queryset": FactLobbyingCommunication.objects,
+        "source_url": "https://open.toronto.ca/dataset/lobbyist-registry/",
+        "known_issue": "",
+    },
+    {
+        "label": "Community grants",
+        "queryset": FactGrant.objects,
+        "source_url": "https://open.toronto.ca/dataset/community-grants-allocations/",
+        "known_issue": "",
+    },
+]
+
+
+def status(request):
+    datasets = []
+    for d in DATASETS:
+        agg = d["queryset"].aggregate(latest=Max("retrieved_at"), earliest=Min("retrieved_at"), row_count=Count("id"))
+        datasets.append({**d, **agg})
+    return render(request, "status.html", {"datasets": datasets})
+
+
+def methodology(request):
+    return render(request, "methodology.html", {"datasets": DATASETS})
+
+
+def corrections(request):
+    corrections_list = Correction.objects.filter(published=True)
+    return render(request, "corrections.html", {"corrections": corrections_list})

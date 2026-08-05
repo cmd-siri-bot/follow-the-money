@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Methodology — TorontoSpends{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>Methodology</h1>
+    <p class="hero-sub">TorontoSpends lets you search and cross-reference the City of Toronto's operating budget, lobbyist registry, and community grants through one shared set of organizations and people.</p>
+</div>
+
+<h2>Data sources</h2>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Dataset</th><th>Source</th></tr></thead>
+        <tbody>
+            {% for d in datasets %}
+            <tr><td>{{ d.label }}</td><td><a href="{{ d.source_url }}">{{ d.source_url }}</a></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p>Exact row counts and pull dates for each dataset are on <a href="{% url 'status' %}">/status</a>, kept separate from this page so it stays current without needing this page to be re-edited every refresh.</p>
+
+<h2>What time period this covers</h2>
+<p>Contract, grant, and budget history is bounded to <strong>November 2022 (the start of the current council term) to the present</strong>, not the full history the City makes available. This is a deliberate editorial choice, not a data limitation: this is a voter-facing site during an active municipal election, and the question it answers is "how has this council spent," not "how has Toronto spent over the last decade." Data from before Nov 2022 is out of scope by design.</p>
+
+<h2>How entities are matched</h2>
+<p>The same organization or person often appears differently across datasets — as a lobbying registrant, a grant recipient, and a budget line's program area. TorontoSpends resolves these to a single <code>Entity</code> record using a deterministic match key: organizations are matched by a normalized form of their legal name (stripped of suffixes like "Inc.", "Ltd.", punctuation, and casing differences), people by normalized full name. This is exact-match logic, not fuzzy matching or an AI judgment call — two names either produce the same key or they don't. That means real matches are sometimes missed (e.g. a meaningfully different name spelling), but it also means nothing is merged on a guess.</p>
+
+<h2>Limitations — read this before citing a number from this site</h2>
+<ul>
+    <li><strong>Revenue lines are stored as negative dollar amounts</strong> (the City's own accounting convention). Naively summing expense and revenue lines together does not produce Toronto's real net operating budget — the hero "total budget" figure on this site is expenses only, for that reason.</li>
+    <li><strong>Lobbying "contact" records show that contact happened at least once — they are not a ranked measure of lobbying intensity or influence.</strong> The registry only logs what registrants voluntarily file. A high communication count for one organization compared to another does not mean it lobbied "more effectively," only that more contacts were logged.</li>
+    <li><strong>The operating budget dataset is not current.</strong> The City's own file was last refreshed 2026-02-25, and no FY2026 file has been published yet as of this site's last data pull (see <a href="{% url 'status' %}">/status</a> for the exact date). This site cannot be fresher than its source.</li>
+    <li><strong>The homepage's year-over-year "biggest movers" only compares programs with an unchanged name across 2022 and 2025</strong> — about 36 of roughly 60 programs. Programs renamed or restructured in that window (e.g. "311 Toronto," which only appears under that name in 2022–2023 data) are excluded from the comparison entirely, not shown as a misleading swing. This means some real, large budget changes are not reflected in that feature simply because the program was renamed.</li>
+    <li><strong>Of roughly 105 distinct City grant program codes, only four — TAC, CSP, SNP, and YVP, the largest by dollar volume since 2022 — get featured placement and full review.</strong> The remaining ~100 programs are ingested and fully searchable, but have not been individually reviewed the way the featured four have.</li>
+    <li><strong>Entity resolution is exact-match, not fuzzy.</strong> See "How entities are matched" above — this means some real-world matches between datasets are missed.</li>
+    <li><strong>Datasets are refreshed manually, not on an automatic schedule.</strong> Check <a href="{% url 'status' %}">/status</a> for the actual last-pull date of any figure before treating it as current.</li>
+</ul>
+
+<h2>What this site does and does not claim</h2>
+<p><strong>Does:</strong> present City-published figures, sourced and dated, cross-referenced by entity. Every fact traces to a source URL and retrieval date.</p>
+<p><strong>Does not:</strong> claim that any lobbying contact influenced any outcome, that any individual or organization acted improperly, or that any pattern visible in this data implies wrongdoing. Lobbying is a lawful, regulated activity; grants and contracts are awarded through the City's own processes. This site shows what was disclosed — it does not interpret intent.</p>
+
+<h2>Corrections</h2>
+<p>Found an error? See the <a href="{% url 'corrections' %}">corrections policy and log</a>.</p>
+{% endblock %}

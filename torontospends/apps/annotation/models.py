@@ -47,3 +47,26 @@ class Annotation(models.Model):
 
     def __str__(self):
         return f"{self.flag_type} on {self.content_object} [{self.status}]"
+
+
+class Correction(models.Model):
+    """A publicly-logged correction, per /methodology's stated correction
+    policy: any factual error reported and confirmed goes here, dated and
+    described, rather than being silently edited away. Public-facing --
+    only published=True rows render on /corrections, so a correction can
+    be drafted in the admin before it goes live.
+    """
+
+    title = models.CharField(max_length=300)
+    description = models.TextField()
+    dataset = models.CharField(max_length=100, blank=True, default="")  # e.g. "budget", "lobbying", "grants" -- free text, not enforced
+    reported_at = models.DateField()
+    resolved_at = models.DateField(null=True, blank=True)
+    published = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-reported_at"]
+
+    def __str__(self):
+        return self.title

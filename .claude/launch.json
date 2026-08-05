@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "torontospends-dev",
-      "runtimeExecutable": ".venv/Scripts/python.exe",
-      "runtimeArgs": ["torontospends/manage.py", "runserver", "8000"],
-      "port": 8000
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", ".venv\\Scripts\\python.exe torontospends\\manage.py runserver 0.0.0.0:%PORT%"],
+      "port": 8000,
+      "autoPort": true
     }
   ]
 }

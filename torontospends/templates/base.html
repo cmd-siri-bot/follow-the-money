@@ -213,6 +213,9 @@
         <a class="brand" href="/">TorontoSpends</a>
         <nav>
             <a href="/">Search</a>
+            <a href="{% url 'methodology' %}">Methodology</a>
+            <a href="{% url 'status' %}">Status</a>
+            <a href="{% url 'corrections' %}">Corrections</a>
         </nav>
         <form class="search-form" action="{% url 'search' %}" method="get"
               hx-get="{% url 'search' %}" hx-trigger="keyup changed delay:300ms, search" hx-target="#page-content" hx-push-url="true">
@@ -223,7 +226,7 @@
         {% block content %}{% endblock %}
     </main>
     <footer>
-        Every figure on this site links to its source and retrieval date. See methodology for data coverage and limitations.
+        Every figure on this site links to its source and retrieval date. See <a href="{% url 'methodology' %}">methodology</a> for data coverage and limitations.
     </footer>
 </body>
 </html>

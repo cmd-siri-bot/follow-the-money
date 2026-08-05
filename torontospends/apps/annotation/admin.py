@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from .models import Annotation
+from .models import Annotation, Correction
 
 
 @admin.register(Annotation)
@@ -30,3 +30,10 @@ class AnnotationAdmin(admin.ModelAdmin):
     def reject_selected(self, request, queryset):
         updated = queryset.update(status=Annotation.REJECTED, reviewer=request.user, reviewed_at=timezone.now())
         self.message_user(request, f"{updated} annotation(s) rejected.")
+
+
+@admin.register(Correction)
+class CorrectionAdmin(admin.ModelAdmin):
+    list_display = ("title", "dataset", "reported_at", "resolved_at", "published")
+    list_filter = ("published", "dataset")
+    search_fields = ("title", "description")

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Corrections — TorontoSpends{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>Corrections</h1>
+    <p class="hero-sub">Every confirmed factual error is logged here, dated, rather than silently edited away.</p>
+</div>
+
+<h2>Policy</h2>
+<p>If you find an error — a wrong figure, a misattributed entity, a broken source link — report it to <a href="mailto:iamsirir@gmail.com">iamsirir@gmail.com</a>. Once confirmed, it's fixed in the underlying data and logged below with the date it was reported and the date it was resolved. This site does not correct entries silently.</p>
+
+<h2>Log</h2>
+{% if corrections %}
+<ul class="result-list">
+    {% for c in corrections %}
+    <li>
+        <strong>{{ c.title }}</strong>{% if c.dataset %} <span class="entity-type-tag">{{ c.dataset }}</span>{% endif %}
+        <div class="result-meta">{{ c.description }}</div>
+        <div class="result-meta">Reported {{ c.reported_at|date:"Y-m-d" }}{% if c.resolved_at %} · Resolved {{ c.resolved_at|date:"Y-m-d" }}{% else %} · Open{% endif %}</div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="empty-state">No corrections have been issued yet.</p>
+{% endif %}
+{% endblock %}

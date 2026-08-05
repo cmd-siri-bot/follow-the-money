@@ -14,6 +14,7 @@ from .taxonomy import (
     classify_revenue_bucket,
     normalize_program_name,
     policy_area_for_program,
+    policy_area_hue,
 )
 
 LATEST_YEAR = 2025
@@ -104,9 +105,11 @@ def _program_changes(year_from, year_to):
         b, a = before[norm], after[norm]
         if b <= 0:
             continue
+        area = policy_area_for_program(after_names[norm])
         changes.append({
             "program": after_names[norm],
-            "policy_area": policy_area_for_program(after_names[norm]),
+            "policy_area": area,
+            "policy_area_hue": policy_area_hue(area),
             "before_dollars": b / 100,
             "after_dollars": a / 100,
             "change_dollars": (a - b) / 100,
@@ -117,18 +120,16 @@ def _program_changes(year_from, year_to):
     movers_eligible = [c for c in changes if c["before_dollars"] * 100 >= MOVER_MIN_BASE_CENTS]
     by_pct = sorted(movers_eligible, key=lambda r: r["pct_change"], reverse=True)
 
+    def _entry(program, dollars):
+        area = policy_area_for_program(program)
+        return {"program": program, "dollars": dollars, "policy_area": area, "policy_area_hue": policy_area_hue(area)}
+
     appeared = sorted(
-        [
-            {"program": after_names[n], "dollars": after[n] / 100, "policy_area": policy_area_for_program(after_names[n])}
-            for n in set(after) - set(before) if after[n] > 0
-        ],
+        [_entry(after_names[n], after[n] / 100) for n in set(after) - set(before) if after[n] > 0],
         key=lambda r: -r["dollars"],
     )
     disappeared = sorted(
-        [
-            {"program": before_names[n], "dollars": before[n] / 100, "policy_area": policy_area_for_program(before_names[n])}
-            for n in set(before) - set(after) if before[n] > 0
-        ],
+        [_entry(before_names[n], before[n] / 100) for n in set(before) - set(after) if before[n] > 0],
         key=lambda r: -r["dollars"],
     )
 

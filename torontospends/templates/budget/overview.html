@@ -87,7 +87,7 @@
             {% for c in yoy.changes %}
             <tr>
                 <td>{{ c.program }}</td>
-                <td>{{ c.policy_area }}</td>
+                <td><span class="policy-tag" style="--tag-hue: {{ c.policy_area_hue }}">{{ c.policy_area }}</span></td>
                 <td>${{ c.before_dollars|floatformat:0|intcomma }}</td>
                 <td>${{ c.after_dollars|floatformat:0|intcomma }}</td>
                 <td class="pct-cell {% if c.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if c.change_dollars >= 0 %}+{% endif %}{{ c.pct_change|floatformat:1 }}%</td>
@@ -146,7 +146,7 @@
             {% for c in since_2022.changes %}
             <tr>
                 <td>{{ c.program }}</td>
-                <td>{{ c.policy_area }}</td>
+                <td><span class="policy-tag" style="--tag-hue: {{ c.policy_area_hue }}">{{ c.policy_area }}</span></td>
                 <td>${{ c.before_dollars|floatformat:0|intcomma }}</td>
                 <td>${{ c.after_dollars|floatformat:0|intcomma }}</td>
                 <td class="pct-cell {% if c.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if c.change_dollars >= 0 %}+{% endif %}{{ c.pct_change|floatformat:1 }}%</td>

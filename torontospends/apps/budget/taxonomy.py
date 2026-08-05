@@ -175,6 +175,17 @@ def policy_area_for_program(program_name: str) -> str:
     return PROGRAM_POLICY_AREA.get(key, "City Governance and Corporate Services")
 
 
+# One hue per policy area, evenly spaced around the color wheel by list
+# order -- not a hand-picked color per category. The CSS side (.policy-tag
+# in base.html) fixes saturation/lightness so contrast stays roughly
+# consistent regardless of which hue lands on a given area, in both themes.
+POLICY_AREA_HUE = {area: round(i * 360 / len(POLICY_AREA_ORDER)) for i, area in enumerate(POLICY_AREA_ORDER)}
+
+
+def policy_area_hue(area_name: str) -> int:
+    return POLICY_AREA_HUE.get(area_name, 0)
+
+
 # --- 3. Expenditure category_name -> plain English ---
 # All 9 values are confirmed identical and stable across FY2022-2025.
 CATEGORY_PLAIN_ENGLISH = {

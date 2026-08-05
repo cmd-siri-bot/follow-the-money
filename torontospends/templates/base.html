@@ -234,6 +234,24 @@
         .tax-history-item .th-pct { font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; font-weight: 600; }
         .tax-history-item .th-note { color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; }
         .section-intro { color: var(--muted); max-width: 60em; }
+
+        /* Policy-area color tags: one hue per area (computed in
+           apps/budget/taxonomy.py, evenly spaced -- not hand-picked per
+           category), fixed saturation/lightness here so contrast stays
+           roughly consistent regardless of which hue lands on a given area. */
+        .policy-tag {
+            display: inline-flex;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            white-space: nowrap;
+            background: hsl(var(--tag-hue) 50% 90%);
+            color: hsl(var(--tag-hue) 60% 26%);
+        }
+        @media (prefers-color-scheme: dark) {
+            .policy-tag { background: hsl(var(--tag-hue) 38% 22%); color: hsl(var(--tag-hue) 55% 84%); }
+        }
         a { color: var(--accent); }
         a:visited { color: #6a4fa8; }
         footer { max-width: 980px; margin: var(--space-5) auto var(--space-3); padding: 0 var(--space-3); color: var(--muted); font-size: 0.8rem; }

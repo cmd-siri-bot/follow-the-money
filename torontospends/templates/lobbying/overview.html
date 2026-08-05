@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Lobbying — TorontoSpends{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>Who's lobbying City Hall, and about what</h1>
+    <p class="hero-sub">{{ total_registrations|intcomma }} active and historical lobbying registrations on file, {{ earliest_year }}&ndash;{{ latest_year }}. Registration means contact was disclosed at least once — not a ranking of influence or wrongdoing.</p>
+</div>
+
+<h2>Top lobbied issues</h2>
+<p class="section-note">Each registration lists one or more subject-matter tags from the registry's own categories. Counted per tag, not per registration — a single registration naming several issues counts once for each.</p>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Issue</th><th>Registrations</th><th>Organizations involved</th></tr></thead>
+        <tbody>
+            {% for i in issues %}
+            <tr>
+                <td><a href="{% url 'search' %}?q={{ i.tag|urlencode }}">{{ i.tag }}</a></td>
+                <td>{{ i.registration_count|intcomma }}</td>
+                <td>{{ i.org_count|intcomma }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2>Top lobbying firms</h2>
+<p class="section-note">Professional consulting firms registrants work for — excludes companies lobbying through their own in-house staff, which is a separate registration type.</p>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Firm</th><th>Registrations</th></tr></thead>
+        <tbody>
+            {% for f in firms %}
+            <tr><td><a href="{% url 'entity_detail' f.firm__id %}">{{ f.firm__display_name }}</a></td><td>{{ f.n|intcomma }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2>Top individual lobbyists</h2>
+<p class="section-note">Consultant-type registrants — people registered as paid lobbyists for hire, as opposed to in-house government-relations staff.</p>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Lobbyist</th><th>Registrations</th></tr></thead>
+        <tbody>
+            {% for c in consultants %}
+            <tr><td><a href="{% url 'entity_detail' c.registrant__id %}">{{ c.registrant__display_name }}</a></td><td>{{ c.n|intcomma }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2>Who lobbying happens on behalf of</h2>
+<p class="section-note">The client for consultant-registered lobbying, or the registrant's own employer for in-house lobbying.</p>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Organization</th><th>Registrations</th></tr></thead>
+        <tbody>
+            {% for o in represented_orgs %}
+            <tr><td><a href="{% url 'entity_detail' o.entity_id %}">{{ o.display_name }}</a></td><td>{{ o.n|intcomma }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2>Did the most-lobbied issues actually see funding move?</h2>
+<p class="section-note">Lobbying volume for the issues above that map to a real City spending area (see <a href="{% url 'methodology' %}">methodology</a> for exactly which tags and why some are excluded), next to that area's real spending change, {{ earliest_year }}&ndash;{{ latest_year }}. <strong>This is two parallel facts, not a claim that one caused the other.</strong> Lobbying registration counts reflect what's legally required to be disclosed, not lobbying intensity or effectiveness — the same caveat that applies everywhere else on this site.</p>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Policy area</th><th>Lobbying registrations</th><th>{{ earliest_year }} spending</th><th>{{ latest_year }} spending</th><th>Change</th></tr></thead>
+        <tbody>
+            {% for r in cross_reference %}
+            <tr>
+                <td>{{ r.policy_area }}</td>
+                <td>{{ r.lobbying_registration_count|intcomma }}</td>
+                <td>${{ r.spending_before|floatformat:0|intcomma }}</td>
+                <td>${{ r.spending_after|floatformat:0|intcomma }}</td>
+                <td class="pct-cell {% if r.spending_pct_change >= 0 %}positive{% else %}negative{% endif %}">{% if r.spending_pct_change >= 0 %}+{% endif %}{{ r.spending_pct_change|floatformat:1 }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="source-note">Full spending detail, including whether the change was concentrated in one program or spread across the policy area, is on <a href="{% url 'budget_overview' %}">/budget</a>.</p>
+{% endblock %}

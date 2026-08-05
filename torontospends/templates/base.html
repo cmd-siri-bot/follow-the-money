@@ -28,6 +28,8 @@
             --domain-lobbying-bg: #faf1e6;
             --domain-grants: #2d6a4f;
             --domain-grants-bg: #eaf5ef;
+            --domain-revenue: #6a4fa8;
+            --domain-revenue-bg: #f1eef9;
 
             --positive: #2d6a4f;
             --negative: #a13f3f;
@@ -59,6 +61,8 @@
                 --domain-lobbying-bg: #2e2418;
                 --domain-grants: #7fc8a4;
                 --domain-grants-bg: #17281f;
+                --domain-revenue: #b09ee0;
+                --domain-revenue-bg: #241c33;
                 --positive: #7fc8a4;
                 --negative: #e58787;
                 --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -203,6 +207,33 @@
         .result-meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
         .empty-state { color: var(--muted); font-style: italic; padding: var(--space-2) 0; }
         .source-note { color: var(--muted); font-size: 0.8rem; margin-top: var(--space-1); }
+
+        /* Hand-rolled horizontal bar charts -- no JS charting library, kept
+           consistent with the rest of the site's hand-built CSS aesthetic. */
+        .bar-list { margin-top: var(--space-2); }
+        .bar-row { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+        .bar-row:last-child { border-bottom: none; }
+        .bar-row-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); font-size: 0.92rem; }
+        .bar-row-name { font-weight: 600; }
+        .bar-row-value { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .bar-track { height: 8px; border-radius: 999px; background: var(--border); margin-top: 0.35rem; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+        .bar-fill.revenue { background: var(--domain-revenue); }
+        .bar-desc { color: var(--muted); font-size: 0.82rem; margin-top: 0.3rem; }
+
+        .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-3); margin-top: var(--space-2); }
+        .pct-cell.positive, .stat-delta.positive { color: var(--positive); }
+        .pct-cell.negative, .stat-delta.negative { color: var(--negative); }
+        .subtle-list { list-style: none; padding: 0; margin: var(--space-1) 0; }
+        .subtle-list li { display: flex; justify-content: space-between; gap: var(--space-2); padding: 0.35rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+        .subtle-list li:last-child { border-bottom: none; }
+        .subtle-list .item-meta { color: var(--muted); }
+        .tax-history { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+        .tax-history-item { flex: 1; min-width: 140px; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+        .tax-history-item .th-year { color: var(--muted); font-size: 0.8rem; }
+        .tax-history-item .th-pct { font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; font-weight: 600; }
+        .tax-history-item .th-note { color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; }
+        .section-intro { color: var(--muted); max-width: 60em; }
         a { color: var(--accent); }
         a:visited { color: #6a4fa8; }
         footer { max-width: 980px; margin: var(--space-5) auto var(--space-3); padding: 0 var(--space-3); color: var(--muted); font-size: 0.8rem; }
@@ -213,6 +244,7 @@
         <a class="brand" href="/">TorontoSpends</a>
         <nav>
             <a href="/">Search</a>
+            <a href="{% url 'budget_overview' %}">Budget</a>
             <a href="{% url 'methodology' %}">Methodology</a>
             <a href="{% url 'status' %}">Status</a>
             <a href="{% url 'corrections' %}">Corrections</a>

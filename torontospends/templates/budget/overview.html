@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Budget — TorontoSpends{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>Where does Toronto's money go?</h1>
+    <p class="hero-sub">The {{ latest_year }} operating budget, in plain English — by policy area, by spending type, and how it's changed over time. Every figure here is expenses only; see <a href="#revenue">revenue</a> below for where the money comes from.</p>
+</div>
+
+<h2>Where the money goes ({{ latest_year }})</h2>
+<p class="section-intro">Grouped into policy areas rather than the City's ~60 individual divisions, so the picture is legible. See <a href="{% url 'methodology' %}">methodology</a> for exactly how programs are grouped — it's an editorial judgment call, documented there.</p>
+<div class="bar-list">
+    {% for area in policy_areas %}
+    <div class="bar-row">
+        <div class="bar-row-head">
+            <span class="bar-row-name">{{ area.name }}</span>
+            <span class="bar-row-value">${{ area.dollars|floatformat:0|intcomma }} <span class="item-meta">({{ area.pct_of_total }}%)</span></span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width: {{ area.bar_pct }}%"></div></div>
+    </div>
+    {% endfor %}
+</div>
+
+<h2>How it's spent ({{ latest_year }})</h2>
+<p class="section-intro">The same {{ latest_year }} total, split by what the money actually pays for — the City's own accounting categories, translated into plain English. This dataset is a program-level summary, not an individual payroll ledger, so job-title-level detail (e.g. a specific trade or role) isn't available — this is as fine-grained as the source data gets.</p>
+<div class="bar-list">
+    {% for cat in spending_types %}
+    <div class="bar-row">
+        <div class="bar-row-head">
+            <span class="bar-row-name">{{ cat.label }}</span>
+            <span class="bar-row-value">${{ cat.dollars|floatformat:0|intcomma }} <span class="item-meta">({{ cat.pct_of_total }}%)</span></span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width: {{ cat.bar_pct }}%"></div></div>
+        <div class="bar-desc">{{ cat.description }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<h2>What changed from {{ prior_year }} to {{ latest_year }}</h2>
+<p class="section-intro">{{ yoy.comparable_count }} programs could be matched by name across both years. Percentage changes are only shown for programs with at least $5M in {{ prior_year }} — below that, a small dollar change produces a meaningless swing.</p>
+
+<div class="two-col">
+    <div>
+        <h3>Biggest increases</h3>
+        <ul class="subtle-list">
+            {% for m in yoy.top_pct_increases %}
+            <li><span>{{ m.program }}</span><span class="pct-cell positive">&#9650; {{ m.pct_change|floatformat:0 }}%</span></li>
+            {% empty %}<li class="item-meta">None above the $5M threshold.</li>{% endfor %}
+        </ul>
+    </div>
+    <div>
+        <h3>Biggest decreases</h3>
+        <ul class="subtle-list">
+            {% for m in yoy.top_pct_decreases %}
+            <li><span>{{ m.program }}</span><span class="pct-cell negative">&#9660; {{ m.pct_change|floatformat:0|cut:"-" }}%</span></li>
+            {% empty %}<li class="item-meta">None above the $5M threshold.</li>{% endfor %}
+        </ul>
+    </div>
+</div>
+
+{% if yoy.appeared or yoy.disappeared %}
+<div class="two-col">
+    <div>
+        <h3>New in {{ latest_year }}</h3>
+        <p class="source-note">Wasn't in {{ prior_year }}'s budget under this name. May be a genuinely new program, or a renamed/restructured one this site couldn't confirm — see methodology.</p>
+        <ul class="subtle-list">
+            {% for p in yoy.appeared %}<li><span>{{ p.program }}</span><span class="item-meta">${{ p.dollars|floatformat:0|intcomma }}</span></li>
+            {% empty %}<li class="item-meta">None.</li>{% endfor %}
+        </ul>
+    </div>
+    <div>
+        <h3>Gone since {{ prior_year }}</h3>
+        <p class="source-note">Was in {{ prior_year }}'s budget, not present under this name in {{ latest_year }}. Could mean the program was cut, folded into another program, or simply renamed.</p>
+        <ul class="subtle-list">
+            {% for p in yoy.disappeared %}<li><span>{{ p.program }}</span><span class="item-meta">${{ p.dollars|floatformat:0|intcomma }}</span></li>
+            {% empty %}<li class="item-meta">None.</li>{% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<h3>Every comparable program, {{ prior_year }} → {{ latest_year }}</h3>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Program</th><th>Policy area</th><th>{{ prior_year }}</th><th>{{ latest_year }}</th><th>Change</th></tr></thead>
+        <tbody>
+            {% for c in yoy.changes %}
+            <tr>
+                <td>{{ c.program }}</td>
+                <td>{{ c.policy_area }}</td>
+                <td>${{ c.before_dollars|floatformat:0|intcomma }}</td>
+                <td>${{ c.after_dollars|floatformat:0|intcomma }}</td>
+                <td class="pct-cell {% if c.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if c.change_dollars >= 0 %}+{% endif %}{{ c.pct_change|floatformat:1 }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2>What's changed since {{ earliest_year }}</h2>
+<p class="section-intro">Same comparison, over the full current council term: {{ earliest_year }} to {{ latest_year }}. {{ since_2022.comparable_count }} programs matched across all four years.</p>
+
+<div class="two-col">
+    <div>
+        <h3>Biggest increases since {{ earliest_year }}</h3>
+        <ul class="subtle-list">
+            {% for m in since_2022.top_pct_increases %}
+            <li><span>{{ m.program }}</span><span class="pct-cell positive">&#9650; {{ m.pct_change|floatformat:0 }}%</span></li>
+            {% empty %}<li class="item-meta">None above the $5M threshold.</li>{% endfor %}
+        </ul>
+    </div>
+    <div>
+        <h3>Biggest decreases since {{ earliest_year }}</h3>
+        <ul class="subtle-list">
+            {% for m in since_2022.top_pct_decreases %}
+            <li><span>{{ m.program }}</span><span class="pct-cell negative">&#9660; {{ m.pct_change|floatformat:0|cut:"-" }}%</span></li>
+            {% empty %}<li class="item-meta">None above the $5M threshold.</li>{% endfor %}
+        </ul>
+    </div>
+</div>
+
+{% if since_2022.appeared or since_2022.disappeared %}
+<div class="two-col">
+    <div>
+        <h3>New since {{ earliest_year }}</h3>
+        <ul class="subtle-list">
+            {% for p in since_2022.appeared %}<li><span>{{ p.program }}</span><span class="item-meta">${{ p.dollars|floatformat:0|intcomma }}</span></li>
+            {% empty %}<li class="item-meta">None.</li>{% endfor %}
+        </ul>
+    </div>
+    <div>
+        <h3>Gone since {{ earliest_year }}</h3>
+        <ul class="subtle-list">
+            {% for p in since_2022.disappeared %}<li><span>{{ p.program }}</span><span class="item-meta">${{ p.dollars|floatformat:0|intcomma }}</span></li>
+            {% empty %}<li class="item-meta">None.</li>{% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<h3>Every comparable program, {{ earliest_year }} → {{ latest_year }}</h3>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Program</th><th>Policy area</th><th>{{ earliest_year }}</th><th>{{ latest_year }}</th><th>Change</th></tr></thead>
+        <tbody>
+            {% for c in since_2022.changes %}
+            <tr>
+                <td>{{ c.program }}</td>
+                <td>{{ c.policy_area }}</td>
+                <td>${{ c.before_dollars|floatformat:0|intcomma }}</td>
+                <td>${{ c.after_dollars|floatformat:0|intcomma }}</td>
+                <td class="pct-cell {% if c.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if c.change_dollars >= 0 %}+{% endif %}{{ c.pct_change|floatformat:1 }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2 id="revenue">Where the money comes from ({{ latest_year }})</h2>
+<p class="section-intro">Revenue, grouped into plain-English sources built from the City's detailed line items — its own revenue categories lump almost everything, including the entire property tax levy, into one "Other Revenue" bucket, so this site builds its own grouping instead. See <a href="{% url 'methodology' %}">methodology</a> for the exact rules.</p>
+<div class="bar-list">
+    {% for b in revenue_breakdown %}
+    <div class="bar-row">
+        <div class="bar-row-head">
+            <span class="bar-row-name">{{ b.name }}</span>
+            <span class="bar-row-value">${{ b.dollars|floatformat:0|intcomma }} <span class="item-meta">({{ b.pct_of_total }}%)</span></span>
+        </div>
+        <div class="bar-track"><div class="bar-fill revenue" style="width: {{ b.bar_pct }}%"></div></div>
+        <div class="bar-desc">{{ b.description }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<h3>What's driven revenue growth since {{ earliest_year }}</h3>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Source</th><th>{{ earliest_year }}</th><th>{{ latest_year }}</th><th>Change</th></tr></thead>
+        <tbody>
+            {% for r in revenue_trend %}
+            <tr>
+                <td>{{ r.name }}</td>
+                <td>${{ r.dollars_2022|floatformat:0|intcomma }}</td>
+                <td>${{ r.dollars_2025|floatformat:0|intcomma }}</td>
+                <td class="pct-cell {% if r.change_dollars >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if r.pct_change_since_2022 is not None %}{% if r.change_dollars >= 0 %}+{% endif %}{{ r.pct_change_since_2022 }}%{% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h3>Is it tax hikes? What we can and can't tell you</h3>
+{% if property_tax_trend %}
+<p>The property tax levy grew from <strong>${{ property_tax_trend.dollars_2022|floatformat:0|intcomma }}</strong> in {{ earliest_year }} to <strong>${{ property_tax_trend.dollars_2025|floatformat:0|intcomma }}</strong> in {{ latest_year }} — a {{ property_tax_trend.pct_change_since_2022 }}% increase. That dollar growth reflects Council-approved rate increases <em>and</em> a growing tax base (new construction, rising assessments) — this budget dataset only reports the total dollar amount collected, not a rate-versus-volume split. What this site <em>can</em> tell you, from public reporting rather than the budget file itself, is the residential rate increase Council actually approved each year:</p>
+{% endif %}
+<div class="tax-history">
+    {% for t in tax_rate_history %}
+    <div class="tax-history-item">
+        <div class="th-year">{{ t.year }}</div>
+        <div class="th-pct">+{{ t.increase_pct }}%</div>
+        {% if t.note %}<div class="th-note">{{ t.note }}</div>{% endif %}
+        <div class="th-note"><a href="{{ t.source_url }}">source</a></div>
+    </div>
+    {% endfor %}
+</div>
+<p class="source-note">Rate figures are sourced from CBC News reporting on each year's Council budget vote, not from the operating budget dataset above — cited separately since they answer a different question (the approved <em>rate</em>) than the dollar totals do (total <em>revenue collected</em>). This site does not claim the two are the same thing.</p>
+{% endblock %}

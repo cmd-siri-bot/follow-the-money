@@ -7,7 +7,15 @@
     <p class="hero-sub">{{ total_registrations|intcomma }} active and historical lobbying registrations on file, {{ earliest_year }}&ndash;{{ latest_year }}. Registration means contact was disclosed at least once — not a ranking of influence or wrongdoing.</p>
 </div>
 
-<h2>Top lobbied issues</h2>
+<nav class="page-toc" aria-label="On this page">
+    <a href="#issues">Top issues</a>
+    <a href="#firms">Firms</a>
+    <a href="#lobbyists">Lobbyists</a>
+    <a href="#orgs">Who's represented</a>
+    <a href="#funding">Did it get funding</a>
+</nav>
+
+<h2 id="issues">Top lobbied issues</h2>
 <p class="section-note">Each registration lists one or more subject-matter tags from the registry's own categories. Counted per tag, not per registration — a single registration naming several issues counts once for each.</p>
 <div class="table-wrap">
     <table>
@@ -24,7 +32,7 @@
     </table>
 </div>
 
-<h2>Top lobbying firms</h2>
+<h2 id="firms">Top lobbying firms</h2>
 <p class="section-note">Professional consulting firms registrants work for — excludes companies lobbying through their own in-house staff, which is a separate registration type.</p>
 <div class="table-wrap">
     <table>
@@ -37,7 +45,7 @@
     </table>
 </div>
 
-<h2>Top individual lobbyists</h2>
+<h2 id="lobbyists">Top individual lobbyists</h2>
 <p class="section-note">Consultant-type registrants — people registered as paid lobbyists for hire, as opposed to in-house government-relations staff.</p>
 <div class="table-wrap">
     <table>
@@ -50,7 +58,7 @@
     </table>
 </div>
 
-<h2>Who lobbying happens on behalf of</h2>
+<h2 id="orgs">Who lobbying happens on behalf of</h2>
 <p class="section-note">The client for consultant-registered lobbying, or the registrant's own employer for in-house lobbying.</p>
 <div class="table-wrap">
     <table>
@@ -63,7 +71,7 @@
     </table>
 </div>
 
-<h2>Did the most-lobbied issues actually see funding move?</h2>
+<h2 id="funding">Did the most-lobbied issues actually see funding move?</h2>
 <p class="section-note">Lobbying volume for the issues above that map to a real City spending area (see <a href="{% url 'methodology' %}">methodology</a> for exactly which tags and why some are excluded), next to that area's real spending change, {{ earliest_year }}&ndash;{{ latest_year }}. <strong>This is two parallel facts, not a claim that one caused the other.</strong> Lobbying registration counts reflect what's legally required to be disclosed, not lobbying intensity or effectiveness — the same caveat that applies everywhere else on this site.</p>
 <div class="table-wrap">
     <table>

@@ -20,7 +20,12 @@ SECRET_KEY = os.environ.get(
     "django-insecure-y8&ddt5*q$q7_un$wojp-f)5-x!#16r@e1=i&*))2^o3*s5^%9",
 )
 
-DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
+# Defaults to False (not True) if the env var is ever missing -- fails safe.
+# Local dev sets DJANGO_DEBUG=true explicitly in .env, so this only changes
+# behavior for a fresh checkout with no .env, or a misconfigured deploy where
+# the var got dropped -- both should serve generic errors, not full
+# tracebacks with settings/source paths, to a public visitor.
+DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
 
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 

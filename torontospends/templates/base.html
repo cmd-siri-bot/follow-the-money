@@ -97,8 +97,10 @@
         header nav a {
             color: var(--muted);
             text-decoration: none;
-            margin-right: var(--space-2);
+            margin-right: 0.2rem;
+            padding: 0.85rem 0.5rem;
             font-size: 0.9rem;
+            display: inline-block;
         }
         header nav a:hover { color: var(--accent); }
         .search-form { flex: 1; min-width: 220px; max-width: 440px; margin-left: auto; }
@@ -234,6 +236,25 @@
         .tax-history-item .th-pct { font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; font-weight: 600; }
         .tax-history-item .th-note { color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; }
         .section-intro { color: var(--muted); max-width: 60em; }
+
+        .page-toc {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            padding: var(--space-1) 0 var(--space-3);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: var(--space-3);
+        }
+        .page-toc a {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-decoration: none;
+            padding: 0.4rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+        }
+        .page-toc a:hover { background: var(--accent-bg); }
 
         /* Policy-area color tags: one hue per area (computed in
            apps/budget/taxonomy.py, evenly spaced -- not hand-picked per

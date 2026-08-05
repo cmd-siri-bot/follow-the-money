@@ -7,7 +7,15 @@
     <p class="hero-sub">The {{ latest_year }} operating budget, in plain English — by policy area, by spending type, and how it's changed over time. Every figure here is expenses only; see <a href="#revenue">revenue</a> below for where the money comes from.</p>
 </div>
 
-<h2>Where the money goes ({{ latest_year }})</h2>
+<nav class="page-toc" aria-label="On this page">
+    <a href="#where-it-goes">Where it goes</a>
+    <a href="#how-spent">How it's spent</a>
+    <a href="#yoy">{{ prior_year }} → {{ latest_year }}</a>
+    <a href="#since-2022">{{ earliest_year }} → {{ latest_year }}</a>
+    <a href="#revenue">Revenue</a>
+</nav>
+
+<h2 id="where-it-goes">Where the money goes ({{ latest_year }})</h2>
 <p class="section-intro">Grouped into policy areas rather than the City's ~60 individual divisions, so the picture is legible. See <a href="{% url 'methodology' %}">methodology</a> for exactly how programs are grouped — it's an editorial judgment call, documented there.</p>
 <div class="bar-list">
     {% for area in policy_areas %}
@@ -21,7 +29,7 @@
     {% endfor %}
 </div>
 
-<h2>How it's spent ({{ latest_year }})</h2>
+<h2 id="how-spent">How it's spent ({{ latest_year }})</h2>
 <p class="section-intro">The same {{ latest_year }} total, split by what the money actually pays for — the City's own accounting categories, translated into plain English. This dataset is a program-level summary, not an individual payroll ledger, so job-title-level detail (e.g. a specific trade or role) isn't available — this is as fine-grained as the source data gets.</p>
 <div class="bar-list">
     {% for cat in spending_types %}
@@ -36,7 +44,7 @@
     {% endfor %}
 </div>
 
-<h2>What changed from {{ prior_year }} to {{ latest_year }}</h2>
+<h2 id="yoy">What changed from {{ prior_year }} to {{ latest_year }}</h2>
 <p class="section-intro">{{ yoy.comparable_count }} programs could be matched by name across both years. Percentage changes are only shown for programs with at least $5M in {{ prior_year }} — below that, a small dollar change produces a meaningless swing.</p>
 
 <div class="two-col">
@@ -97,7 +105,7 @@
     </table>
 </div>
 
-<h2>What's changed since {{ earliest_year }}</h2>
+<h2 id="since-2022">What's changed since {{ earliest_year }}</h2>
 <p class="section-intro">Same comparison, over the full current council term: {{ earliest_year }} to {{ latest_year }}. {{ since_2022.comparable_count }} programs matched across all four years.</p>
 
 <div class="two-col">

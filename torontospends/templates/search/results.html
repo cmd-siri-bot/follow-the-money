@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}{% if query %}“{{ query }}” — {% endif %}Search — TorontoSpends{% endblock %}
+{% block content %}
+{% include "search/_results_fragment.html" %}
+{% endblock %}

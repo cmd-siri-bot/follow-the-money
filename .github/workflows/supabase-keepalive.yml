@@ -1,0 +1,32 @@
+name: TorontoSpends Supabase keep-warm ping
+
+# Prevents the free-tier Supabase project from auto-pausing after 7 days
+# with no activity (docs/torontospends/docs/08-decision-log.md, hosting
+# decision). Runs every 3 days -- comfortably under the 7-day window even
+# if one scheduled run gets delayed or skipped.
+#
+# Dormant until: (1) this repo is pushed to GitHub, and (2) DATABASE_URL
+# is added as a repository secret (Settings -> Secrets and variables ->
+# Actions). Neither has been done as of 2026-08-05 -- this file just
+# gets the mechanism ready ahead of time.
+
+on:
+  schedule:
+    - cron: "0 13 */3 * *"  # 13:00 UTC every 3rd day -- arbitrary time, just needs to be regular
+  workflow_dispatch: {}  # allows a manual "Run workflow" click to test it without waiting for the schedule
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: pip install -r torontospends/requirements.txt
+      - name: Ping Supabase
+        working-directory: torontospends
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python manage.py ping_supabase

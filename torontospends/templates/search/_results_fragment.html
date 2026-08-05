@@ -1,0 +1,79 @@
+{% load humanize %}
+<h1>{% if query %}Results for &ldquo;{{ query }}&rdquo;{% else %}Search TorontoSpends{% endif %}</h1>
+
+{% if query and not has_results %}
+    <p class="empty-state">No matches in budget lines, lobbying records, grants, or entities.</p>
+    <p><a href="{% url 'search' %}">Browse the biggest programs and organizations instead &rarr;</a></p>
+{% endif %}
+
+{% if entities %}
+<h2>Entities</h2>
+<ul class="result-list">
+    {% for e in entities %}
+    <li>
+        <a href="{% url 'entity_detail' e.pk %}">{{ e.display_name }}</a>
+        <span class="entity-type-tag">{{ e.get_entity_type_display }}</span>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if registrations %}
+<h2>Lobbying registrations</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>Registrant</th><th>Type</th><th>Beneficiary</th><th>Firm</th><th>Subject matter</th><th>Effective</th></tr>
+    {% for r in registrations %}
+    <tr>
+        <td>{% if r.registrant %}<a href="{% url 'entity_detail' r.registrant.pk %}">{{ r.registrant.display_name }}</a>{% endif %}</td>
+        <td>{{ r.registrant_type }}</td>
+        <td>{% if r.beneficiary %}<a href="{% url 'entity_detail' r.beneficiary.pk %}">{{ r.beneficiary.display_name }}</a>{% else %}&mdash;{% endif %}</td>
+        <td>{% if r.firm %}<a href="{% url 'entity_detail' r.firm.pk %}">{{ r.firm.display_name }}</a>{% else %}&mdash;{% endif %}</td>
+        <td>{{ r.subject_matter|truncatechars:60 }}</td>
+        <td>{{ r.effective_date|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+<p class="source-note">Source: Toronto Lobbyist Registry. Contact counts reflect what registrants voluntarily filed, not a complete record of all contact.</p>
+{% endif %}
+
+{% if grants %}
+<h2>Grants</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>Recipient</th><th>Program</th><th>Division</th><th>Ward</th><th>Year</th><th>Amount</th></tr>
+    {% for g in grants %}
+    <tr>
+        <td>{% if g.recipient %}<a href="{% url 'entity_detail' g.recipient.pk %}">{{ g.recipient_name_raw }}</a>{% else %}{{ g.recipient_name_raw }}{% endif %}</td>
+        <td>{{ g.funding_program_name|default:g.funding_program_code }}</td>
+        <td>{{ g.division }}</td>
+        <td>{{ g.ward|truncatechars:40 }}</td>
+        <td>{{ g.fiscal_year }}</td>
+        <td>${{ g.amount_dollars|floatformat:2|intcomma }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+<p class="source-note">Source: City of Toronto Community Grants Allocations.</p>
+{% endif %}
+
+{% if budget_lines %}
+<h2>Budget lines</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>Program</th><th>Service</th><th>Category</th><th>Type</th><th>Year</th><th>Amount</th></tr>
+    {% for b in budget_lines %}
+    <tr>
+        <td>{{ b.program }}</td>
+        <td>{{ b.service }}</td>
+        <td>{{ b.category_name }}</td>
+        <td>{{ b.expense_or_revenue }}</td>
+        <td>{{ b.fiscal_year }}</td>
+        <td>${{ b.amount_dollars|floatformat:2|intcomma }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+<p class="source-note">Source: City of Toronto approved operating budget. Revenue lines are recorded as negative amounts per the City's own accounting convention.</p>
+{% endif %}

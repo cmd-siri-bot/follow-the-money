@@ -37,6 +37,22 @@ name text to match a member whose term covers the communication's date --
 number-only matching would have silently mis-attributed pre-reform-era
 contacts to whichever current councillor happens to hold that number today.
 
+2026-08-03 addition: the 81 development-application items with an
+extracted Applicant/Agent/Architect/Owner (data/processed/
+development_applicants.csv, see docs/08's "Staff-report PDF route"
+entry) are fed in as a `devapp:` project entity per item plus a role
+entity per name. Organization-shaped names (architecture/planning firms,
+numbered companies) reuse the same org_key() merge every other org
+entity uses -- if a name here is already an org: entity from the
+lobbyist firm/beneficiary tables, it's automatically the same node, no
+extra linking code needed (this is how the Samuel Sarick Limited /
+Graduate Holdings Limited cross-validation surfaced in the prior
+session's manual read). Person-shaped names (mostly individual Owners)
+get the same confidence-scored possible_same_person treatment as
+registrant<->donor linking below -- matched against the graph's full
+donor and lobbyist_registrant populations (a superset of donors.csv and
+dev_sector_reference.csv), never asserted as identity from name alone.
+
 Outputs:
   data/interim/kg_entities.csv -- entity_id, entity_type (person/org),
     subtype, display_name, match_key, postal_code, notes
@@ -49,10 +65,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from normalize_names import normalize_name, normalize_whitespace, strip_accents_for_matching  # noqa: E402
+from normalize_names import normalize_name, normalize_whitespace, normalize_postal, strip_accents_for_matching, org_key  # noqa: E402
+from extract_role_name import extract_name_and_postal, classify_role_name, person_match_key  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 INTERIM = ROOT / "data" / "interim"
+PROCESSED = ROOT / "data" / "processed"
 
 SUBJ_PATH = INTERIM / "lobbyist_subject_matters.csv"
 FIRMS_PATH = INTERIM / "lobbyist_firms.csv"
@@ -60,6 +78,9 @@ BENE_PATH = INTERIM / "lobbyist_beneficiaries.csv"
 COMMS_PATH = INTERIM / "lobbyist_communications.csv"
 DONORS_PATH = INTERIM / "donors.csv"
 MEMBERS_PATH = INTERIM / "member_terms.csv"
+DEV_APPLICANTS_PATH = PROCESSED / "development_applicants.csv"
+
+ROLE_COLUMNS = ["applicant", "agent", "architect", "owner"]
 
 ENTITIES_OUT = INTERIM / "kg_entities.csv"
 EDGES_OUT = INTERIM / "kg_edges.csv"
@@ -69,13 +90,6 @@ EDGE_FIELDS = ["edge_id", "source_id", "target_id", "edge_type", "date", "amount
 
 MAYOR_OFFICE_ALIASES = {"mayor", "mayors office", "office of the mayor"}
 NO_TERM_END = "9999-12-31"
-
-
-def org_key(name: str) -> str:
-    name = strip_accents_for_matching(normalize_whitespace(name or "")).lower()
-    name = re.sub(r"[^a-z0-9 ]", " ", name)
-    name = re.sub(r"\b(inc|incorporated|ltd|limited|corp|corporation|llp|lp|the|co)\b", " ", name)
-    return normalize_whitespace(name)
 
 
 def load_csv(path: Path):
@@ -140,7 +154,7 @@ def build_registrants(reg: Registry, subj_rows, firms_rows, bene_rows):
         sm_to_registrant[sm] = registrant_id
         reg.add_entity(registrant_id, "person", "lobbyist_registrant",
                         f"{first} {last}", match_key=norm["match_key"],
-                        postal_code=(r.get("registrant_PostalCode") or "").strip(),
+                        postal_code=normalize_postal(r.get("registrant_PostalCode") or ""),
                         notes=f"{r.get('registrant_Type','')}; {r.get('registrant_PositionTitle','')}".strip("; "))
 
         subject_text = r.get("SubjectMatter", "")
@@ -300,6 +314,94 @@ def link_registrants_to_donors(reg: Registry):
     return n_matched
 
 
+def build_dev_applicants(reg: Registry, dev_app_rows):
+    """One devapp: entity per item with a found Data Sheet, plus a
+    role edge to the (org- or person-classified) name in each of the
+    four role columns. Returns stats for reporting."""
+    stats = {"items": 0, "role_values_seen": 0, "org_roles": 0, "person_roles": 0, "skipped": 0}
+    person_role_entity_ids = []
+
+    for r in dev_app_rows:
+        if r.get("found_data_sheet") != "True":
+            continue
+        item_id = r["item_id"]
+        devapp_id = f"devapp:{item_id}"
+        reg.add_entity(
+            devapp_id, "project", "development_application", r.get("agenda_item_title", item_id),
+            notes=(f"application_number={r.get('application_number','')}; "
+                    f"street={r.get('dev_app_street','')}").strip("; "),
+        )
+        stats["items"] += 1
+
+        for role in ROLE_COLUMNS:
+            raw = r.get(role, "")
+            if not raw:
+                continue
+            stats["role_values_seen"] += 1
+            name, postal = extract_name_and_postal(raw)
+            kind = classify_role_name(name)
+            if kind is None:
+                stats["skipped"] += 1
+                continue
+
+            if kind == "org":
+                org_id = reg.org(name, "development_applicants.csv")
+                if org_id is None:
+                    stats["skipped"] += 1
+                    continue
+                stats["org_roles"] += 1
+                reg.add_edge(org_id, devapp_id, f"role__{role}",
+                             basis=f"{item_id}: {r.get('agenda_item_title','')}",
+                             source_table="development_applicants.csv")
+            else:
+                norm = person_match_key(name)
+                match_key = norm["match_key"]
+                if not match_key:
+                    stats["skipped"] += 1
+                    continue
+                stats["person_roles"] += 1
+                person_id = f"devrole:{match_key}|{postal}"
+                reg.add_entity(person_id, "person", "dev_role_person", name,
+                                match_key=match_key, postal_code=postal,
+                                notes=f"role={role}; first seen on {item_id}")
+                reg.add_edge(person_id, devapp_id, f"role__{role}",
+                             basis=f"{item_id}: {r.get('agenda_item_title','')}",
+                             source_table="development_applicants.csv")
+                person_role_entity_ids.append(person_id)
+    return stats, person_role_entity_ids
+
+
+def link_dev_role_persons(reg: Registry, person_role_entity_ids):
+    """Same confidence-scored, name-match-only approach as
+    link_registrants_to_donors: person-shaped applicant/agent/architect/
+    owner names checked against the graph's full donor and
+    lobbyist_registrant populations (a superset of donors.csv and
+    dev_sector_reference.csv). A shared name is never asserted as a
+    shared identity -- only postal-corroborated matches should be
+    treated as real leads, per docs/02's identity-match standard."""
+    donors = [e for e in reg.entities.values() if e["subtype"] == "donor"]
+    registrants = [e for e in reg.entities.values() if e["subtype"] == "lobbyist_registrant"]
+    donors_by_key, registrants_by_key = {}, {}
+    for d in donors:
+        donors_by_key.setdefault(d["match_key"], []).append(d)
+    for r in registrants:
+        registrants_by_key.setdefault(r["match_key"], []).append(r)
+
+    n_matched = 0
+    for person_id in set(person_role_entity_ids):
+        person = reg.entities[person_id]
+        for target_list, target_label in ((donors_by_key, "donor"), (registrants_by_key, "lobbyist_registrant")):
+            for target in target_list.get(person["match_key"], []):
+                corroborated = bool(person["postal_code"]) and person["postal_code"] == target["postal_code"]
+                confidence = "name_and_postal_corroborated" if corroborated else "name_only_uncorroborated"
+                reg.add_edge(person_id, target["entity_id"], "possible_same_person",
+                             confidence=confidence,
+                             basis=f"match_key='{person['match_key']}', target_subtype={target_label}",
+                             source_table="build_knowledge_graph.py")
+                n_matched += 1
+    return n_matched
+
+
 def write_outputs(reg: Registry):
     ENTITIES_OUT.parent.mkdir(parents=True, exist_ok=True)
     with ENTITIES_OUT.open("w", newline="", encoding="utf-8") as f:
@@ -319,6 +421,7 @@ def main():
     comms_rows = load_csv(COMMS_PATH)
     donor_rows = load_csv(DONORS_PATH)
     member_rows = load_csv(MEMBERS_PATH)
+    dev_app_rows = load_csv(DEV_APPLICANTS_PATH)
 
     reg = Registry()
     build_members(reg, member_rows)
@@ -326,6 +429,19 @@ def main():
     comm_stats = build_communications(reg, comms_rows, sm_to_registrant, member_rows)
     build_donors(reg, donor_rows, member_rows)
     n_identity_links = link_registrants_to_donors(reg)
+
+    # Snapshot which org: entities already existed from the lobbyist
+    # tables before dev-applicant orgs get merged in, so the cross-
+    # validation count below reflects genuine independent overlap.
+    org_keys_before = {e["match_key"] for e in reg.entities.values() if e["entity_type"] == "org"}
+    dev_app_stats, person_role_entity_ids = build_dev_applicants(reg, dev_app_rows)
+    n_applicant_identity_links = link_dev_role_persons(reg, person_role_entity_ids)
+    devapp_org_ids = {e["source_id"] for e in reg.edges if e["source_table"] == "development_applicants.csv"}
+    org_keys_from_devapps = {
+        reg.entities[eid]["match_key"] for eid in devapp_org_ids
+        if eid in reg.entities and reg.entities[eid]["entity_type"] == "org"
+    }
+    n_org_cross_validation = len(org_keys_from_devapps & org_keys_before)
 
     write_outputs(reg)
 
@@ -345,6 +461,13 @@ def main():
     print(f"Communications with a named POH contact: {comm_stats['total_with_poh_name']}")
     print(f"  resolved to a specific current member's office (date+ward matched): {comm_stats['resolved_to_member']}")
     print(f"Registrant<->donor possible-same-person links: {n_identity_links}")
+    print()
+    print(f"Development-application items with a found Data Sheet fed in: {dev_app_stats['items']}")
+    print(f"  role values seen: {dev_app_stats['role_values_seen']} "
+          f"(org-classified: {dev_app_stats['org_roles']}, person-classified: {dev_app_stats['person_roles']}, "
+          f"skipped/placeholder: {dev_app_stats['skipped']})")
+    print(f"  org-level cross-validation (same org already existed as a lobbyist firm/beneficiary): {n_org_cross_validation}")
+    print(f"  dev-role-person<->donor/registrant possible-same-person links: {n_applicant_identity_links}")
     print(f"-> {ENTITIES_OUT}")
     print(f"-> {EDGES_OUT}")
 

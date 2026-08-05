@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ entity.display_name }} — TorontoSpends{% endblock %}
+{% block content %}
+<h1>{{ entity.display_name }} <span class="entity-type-tag">{{ entity.get_entity_type_display }}</span></h1>
+
+{% if not registrations_as_registrant and not registrations_as_beneficiary and not registrations_as_firm and not communications_as_poh and not communications_as_lobbyist and not grants_received %}
+<p class="empty-state">No lobbying activity or grant history on record for this entity.</p>
+{% endif %}
+
+{% if grants_received %}
+<h2>Grants received</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>Program</th><th>Division</th><th>Year</th><th>Amount</th></tr>
+    {% for g in grants_received %}
+    <tr>
+        <td>{{ g.funding_program_name|default:g.funding_program_code }}</td>
+        <td>{{ g.division }}</td>
+        <td>{{ g.fiscal_year }}</td>
+        <td>${{ g.amount_dollars|floatformat:2|intcomma }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+<p class="source-note">Source: City of Toronto Community Grants Allocations.</p>
+{% endif %}
+
+{% if registrations_as_registrant %}
+<h2>Registered as lobbyist</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>On behalf of</th><th>Firm</th><th>Subject matter</th><th>Status</th><th>Effective</th></tr>
+    {% for r in registrations_as_registrant %}
+    <tr>
+        <td>{% if r.beneficiary %}<a href="{% url 'entity_detail' r.beneficiary.pk %}">{{ r.beneficiary.display_name }}</a>{% else %}&mdash;{% endif %}</td>
+        <td>{% if r.firm %}<a href="{% url 'entity_detail' r.firm.pk %}">{{ r.firm.display_name }}</a>{% else %}&mdash;{% endif %}</td>
+        <td>{{ r.subject_matter|truncatechars:60 }}</td>
+        <td>{{ r.status }}</td>
+        <td>{{ r.effective_date|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+{% endif %}
+
+{% if registrations_as_beneficiary %}
+<h2>Client of registered lobbyists</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>Registrant</th><th>Firm</th><th>Subject matter</th><th>Status</th><th>Effective</th></tr>
+    {% for r in registrations_as_beneficiary %}
+    <tr>
+        <td>{% if r.registrant %}<a href="{% url 'entity_detail' r.registrant.pk %}">{{ r.registrant.display_name }}</a>{% endif %}</td>
+        <td>{% if r.firm %}<a href="{% url 'entity_detail' r.firm.pk %}">{{ r.firm.display_name }}</a>{% else %}&mdash;{% endif %}</td>
+        <td>{{ r.subject_matter|truncatechars:60 }}</td>
+        <td>{{ r.status }}</td>
+        <td>{{ r.effective_date|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+{% endif %}
+
+{% if registrations_as_firm %}
+<h2>Consulting firm for</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>Registrant</th><th>Client</th><th>Subject matter</th><th>Status</th><th>Effective</th></tr>
+    {% for r in registrations_as_firm %}
+    <tr>
+        <td>{% if r.registrant %}<a href="{% url 'entity_detail' r.registrant.pk %}">{{ r.registrant.display_name }}</a>{% endif %}</td>
+        <td>{% if r.beneficiary %}<a href="{% url 'entity_detail' r.beneficiary.pk %}">{{ r.beneficiary.display_name }}</a>{% else %}&mdash;{% endif %}</td>
+        <td>{{ r.subject_matter|truncatechars:60 }}</td>
+        <td>{{ r.status }}</td>
+        <td>{{ r.effective_date|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+{% endif %}
+
+{% if communications_as_poh %}
+<h2>Lobbying contacts received</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>From (lobbyist)</th><th>Office</th><th>Method</th><th>Date</th></tr>
+    {% for c in communications_as_poh %}
+    <tr>
+        <td>{% if c.lobbyist_entity %}<a href="{% url 'entity_detail' c.lobbyist_entity.pk %}">{{ c.lobbyist_entity.display_name }}</a>{% endif %}</td>
+        <td>{{ c.poh_office }}</td>
+        <td>{{ c.communication_method }}</td>
+        <td>{{ c.communication_date|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+<p class="source-note">This shows contact occurred at least once -- the registry only logs what's voluntarily filed, not a complete or ranked measure of lobbying intensity.</p>
+{% endif %}
+
+{% if communications_as_lobbyist %}
+<h2>Lobbying contacts made</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>Public office holder</th><th>Office</th><th>Method</th><th>Date</th></tr>
+    {% for c in communications_as_lobbyist %}
+    <tr>
+        <td>{{ c.poh_name }}</td>
+        <td>{{ c.poh_office }}</td>
+        <td>{{ c.communication_method }}</td>
+        <td>{{ c.communication_date|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+<p class="source-note">This shows contact occurred at least once -- the registry only logs what's voluntarily filed, not a complete or ranked measure of lobbying intensity.</p>
+{% endif %}
+{% endblock %}

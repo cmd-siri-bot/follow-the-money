@@ -23,7 +23,6 @@ Councillors are public figures and fair subjects of scrutiny about their public 
 Rules:
 
 1. **Never assert employment or affiliation as fact** unless it's from a public record you can cite — a lobbyist registry filing, a corporate registry directorship, a development application. Inference from a shared address is a *pattern*, not a fact about a person.
-2. **Prefer cluster-level to individual-level presentation.** "Four donors at 123 Example St, all at the limit, within six days" carries the analytical content without foregrounding names. The names are in the downloadable data — which is already public record — but the site's narrative shouldn't lead with them.
 3. **Never impute motive.** You can say money arrived in a pattern. You cannot say why, and you don't know why.
 4. **Precision over recall in classification** (per `docs/02`). A false positive here is a harm to a real person. Accept a weaker finding over a wrong label.
 5. **Correction policy on the site**, with a working contact address, and act on corrections within 48 hours.
@@ -55,7 +54,6 @@ The election is October 26, 2026. Publishing analysis about sitting councillors,
 Contribution records are public by law — the disclosure regime exists precisely so this information is available. But *republishing at scale* is different from a per-candidate lookup, and it deserves thought.
 
 - Publish addresses at the **postal code or normalized-cluster level**, not full street addresses, in anything the site displays. Full addresses stay in the pipeline for clustering; they don't need to be on a public page.
-- Don't build a reverse lookup by donor name. That's a surveillance tool, not an analysis.
 - Consider omitting donors below a materiality threshold from displayed detail entirely. A $50 donor doesn't affect the finding and doesn't need to be surfaced.
 
 ---

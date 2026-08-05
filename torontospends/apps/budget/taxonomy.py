@@ -251,6 +251,31 @@ REVENUE_BUCKET_DESCRIPTIONS = {
     "Other Revenue": "Miscellaneous revenue that doesn't fit the categories above.",
 }
 
+# Revenue buckets where the City sets the rate/fee itself (or the tax is City-specific).
+# Excludes Provincial/Federal transfers (Queen's Park/Ottawa set those, not Toronto),
+# reserve/capital drawdowns (past savings, not new revenue), investment income, and
+# inter-divisional recoveries (internal, not revenue from outside the City). Used on
+# the homepage to answer "what am I paying more of that's actually within the City's
+# control" -- a narrower, more precise question than "what revenue grew."
+CITY_CONTROLLED_REVENUE_BUCKETS = {
+    "Property Tax", "Other Taxes", "User Fees, Licences and Permits",
+    "Water and Waste Fees", "Fines and Penalties",
+}
+
+# Olivia Chow was sworn in 2023-07-12 (source below) -- after the FY2023 operating
+# budget had already been approved by Council in February 2023, under the outgoing
+# mayor. Her first full budget cycle was FY2024. Used on the homepage, which compares
+# 2023-2025 at the user's request as a mayoral-term reference point -- this note keeps
+# that framing honest: the 2023 baseline itself predates her taking office, and every
+# City budget is Council's collective decision, not the mayor's alone.
+MAYORAL_TRANSITION_YEAR = 2023
+MAYORAL_TRANSITION_NOTE = (
+    "Mayor Chow was sworn in July 12, 2023, after the FY2023 budget had already been "
+    "approved by Council under the outgoing mayor -- her first full budget cycle was "
+    "FY2024. Every City budget is approved by Council as a whole, not by the mayor alone."
+)
+MAYORAL_TRANSITION_SOURCE = "https://www.toronto.ca/news/mayor-olivia-chow-takes-office-as-mayor-of-toronto/"
+
 # Sourced separately from the raw budget data -- see /methodology. Council-approved
 # residential property tax rate increases (CBC News), not derived from FactBudgetLine.
 PROPERTY_TAX_RATE_HISTORY = [

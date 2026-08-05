@@ -1,46 +1,130 @@
 {% load humanize %}
 <section class="hero">
-    <h1>Where does Toronto's money go?</h1>
-    <p class="hero-sub">Search the City's operating budget, lobbyist registry, and community grants, or start with one of the entries below.</p>
+    <h1>Are you getting your money's worth?</h1>
+    <p class="hero-sub">Toronto's {{ latest_budget_year }} budget, its revenue, and how both have changed since 2023 — in plain numbers, sourced and dated, so you can weigh it yourself.</p>
     <div class="hero-stats">
         <div class="hero-stat">
-            <div class="stat-value">${{ hero_stats.total_budget_dollars|intword }}</div>
-            <div class="stat-label">tracked in the {{ latest_budget_year }} operating budget</div>
+            <div class="stat-value">${{ big_picture.total_budget_dollars|intword }}</div>
+            <div class="stat-label">total {{ latest_budget_year }} spending</div>
         </div>
         <div class="hero-stat">
-            <div class="stat-value">${{ hero_stats.total_grant_dollars|intword }}</div>
-            <div class="stat-label">in community grants since {{ earliest_budget_year }}</div>
+            <div class="stat-value">${{ big_picture.total_revenue_dollars|intword }}</div>
+            <div class="stat-label">total {{ latest_budget_year }} revenue</div>
         </div>
-        <div class="hero-stat">
-            <div class="stat-value">{{ hero_stats.lobbying_registration_count|intcomma }}</div>
-            <div class="stat-label">registered lobbying subjects on file</div>
+    </div>
+    <p class="source-note">These two totals aren't directly comparable line-for-line — see <a href="{% url 'methodology' %}">methodology</a> for why. Full breakdown on <a href="{% url 'budget_overview' %}">/budget</a>.</p>
+</section>
+
+<section class="browse-section">
+    <h2>Where it goes, where it comes from</h2>
+    <p class="section-note">{{ latest_budget_year }} spending by policy area, and {{ latest_budget_year }} revenue by source. Full detail, including "how it's spent" by category, on <a href="{% url 'budget_overview' %}">/budget</a>.</p>
+    <div class="two-col">
+        <div>
+            <h3>Spending</h3>
+            <div class="bar-list">
+                {% for area in policy_areas|slice:":8" %}
+                <div class="bar-row">
+                    <div class="bar-row-head">
+                        <span class="bar-row-name">{{ area.name }}</span>
+                        <span class="bar-row-value">{{ area.pct_of_total }}%</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="width: {{ area.bar_pct }}%"></div></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div>
+            <h3>Revenue</h3>
+            <div class="bar-list">
+                {% for b in revenue_breakdown %}
+                <div class="bar-row">
+                    <div class="bar-row-head">
+                        <span class="bar-row-name">{{ b.name }}</span>
+                        <span class="bar-row-value">{{ b.pct_of_total }}%</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill revenue" style="width: {{ b.bar_pct }}%"></div></div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </section>
 
 <section class="browse-section">
-    <h2>Budget shifts since {{ earliest_budget_year }}</h2>
-    <p class="section-note">Comparing {{ earliest_budget_year }} to {{ latest_budget_year }} approved budgets for the {{ movers.comparable_program_count }} programs that kept the same name across both years and had at least $5M in {{ earliest_budget_year }} &mdash; programs that were renamed or restructured in between aren't included, since the comparison wouldn't mean anything.</p>
-    <div class="mover-grid">
-        {% for m in movers.increases %}
-        <a class="mover-card" href="{% url 'search' %}?q={{ m.program|urlencode }}">
-            <div class="mover-program">{{ m.program }}</div>
-            <div class="mover-delta positive">&#9650; {{ m.pct_change|floatformat:0 }}%</div>
-            <div class="mover-range">${{ m.before_dollars|intword }} &rarr; ${{ m.after_dollars|intword }}</div>
-        </a>
+    <h2>Has your tax bill gone up?</h2>
+    <p class="section-note">Property tax revenue, {{ tax_bill.mayoral_transition_year }} to {{ latest_budget_year }}.</p>
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <div class="stat-value">+{{ tax_bill.property_tax.pct_change }}%</div>
+            <div class="stat-label">property tax revenue collected: ${{ tax_bill.property_tax.dollars_before|floatformat:0|intcomma }} &rarr; ${{ tax_bill.property_tax.dollars_after|floatformat:0|intcomma }}</div>
+        </div>
+        <div class="hero-stat">
+            <div class="stat-value">+{{ tax_bill.rate.cumulative_pct }}%</div>
+            <div class="stat-label">cumulative Council-approved residential rate increase, {{ tax_bill.mayoral_transition_year }}&ndash;{{ latest_budget_year }}</div>
+        </div>
+    </div>
+    <p class="source-note">The dollar total also reflects a growing tax base (new construction, rising assessments), not the rate alone — see <a href="{% url 'budget_overview' %}#revenue">/budget</a> for that distinction spelled out. Rate figures below, by year:</p>
+    <div class="tax-history">
+        {% for t in tax_bill.rate.years %}
+        <div class="tax-history-item">
+            <div class="th-year">{{ t.year }}</div>
+            <div class="th-pct">+{{ t.increase_pct }}%</div>
+            {% if t.note %}<div class="th-note">{{ t.note }}</div>{% endif %}
+            <div class="th-note"><a href="{{ t.source_url }}">source</a></div>
+        </div>
         {% endfor %}
-        {% for m in movers.decreases %}
-        <a class="mover-card" href="{% url 'search' %}?q={{ m.program|urlencode }}">
-            <div class="mover-program">{{ m.program }}</div>
-            <div class="mover-delta negative">&#9660; {{ m.pct_change|floatformat:0|cut:"-" }}%</div>
-            <div class="mover-range">${{ m.before_dollars|intword }} &rarr; ${{ m.after_dollars|intword }}</div>
-        </a>
+    </div>
+    <p class="source-note">{{ tax_bill.mayoral_transition_note }} <a href="{{ tax_bill.mayoral_transition_source }}">Source</a>.</p>
+</section>
+
+<section class="browse-section">
+    <h2>What else costs more</h2>
+    <p class="section-note">Other revenue where the City sets the rate or fee itself, {{ tax_bill.mayoral_transition_year }} to {{ latest_budget_year }}. Provincial/federal transfers, reserve drawdowns, and investment income are deliberately left out here — Toronto doesn't set those.</p>
+    <div class="bar-list">
+        {% for r in other_costs %}
+        <div class="bar-row">
+            <div class="bar-row-head">
+                <span class="bar-row-name">{{ r.name }}</span>
+                <span class="bar-row-value pct-cell {% if r.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if r.pct_change is not None %}{% if r.change_dollars >= 0 %}+{% endif %}{{ r.pct_change }}%{% else %}—{% endif %}</span>
+            </div>
+            <div class="bar-desc">${{ r.dollars_before|floatformat:0|intcomma }} &rarr; ${{ r.dollars_after|floatformat:0|intcomma }}</div>
+        </div>
         {% endfor %}
     </div>
 </section>
 
 <section class="browse-section">
-    <h2>Biggest grant programs</h2>
+    <h2>Where did the new money go</h2>
+    <p class="section-note">Policy areas with the biggest dollar change in spending, {{ tax_bill.mayoral_transition_year }} to {{ latest_budget_year }}, ranked by dollars not percent — a big swing on a small program isn't the same thing as a big swing on a billion-dollar one. Full program-level detail on <a href="{% url 'budget_overview' %}#since-2022">/budget</a>.</p>
+    <div class="two-col">
+        <div>
+            <h3>Biggest increases</h3>
+            <ul class="subtle-list">
+                {% for r in funding_changes.increases %}
+                <li><span class="policy-tag" style="--tag-hue: {{ r.hue }}">{{ r.name }}</span><span class="pct-cell positive">+${{ r.change_dollars|intword }}</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            <h3>Biggest decreases</h3>
+            <ul class="subtle-list">
+                {% for r in funding_changes.decreases %}
+                <li><span class="policy-tag" style="--tag-hue: {{ r.hue }}">{{ r.name }}</span><span class="pct-cell negative">&minus;${{ r.change_dollars|intword|cut:"-" }}</span></li>
+                {% empty %}
+                <li class="item-meta">No policy area saw a real cut in this window — every area's spending grew.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="browse-section">
+    <h2>So — are you getting your money's worth?</h2>
+    <p class="section-note">That's not a question this site answers for you. What it can do is show every dollar, sourced and dated, so you can weigh the tradeoffs yourself: the <a href="{% url 'budget_overview' %}">full budget breakdown</a>, <a href="{% url 'methodology' %}">how these figures are built</a>, or <a href="{% url 'search' %}">search</a> for anything specific.</p>
+</section>
+
+<section class="browse-section">
+    <h2>Explore further</h2>
     <div class="card-grid">
         {% for g in top_grant_programs %}
         <a class="browse-card" href="{% url 'search' %}?q={{ g.funding_program_name|default:g.funding_program_code|urlencode }}">
@@ -49,12 +133,6 @@
             <span class="card-meta">${{ g.total_dollars|floatformat:0|intcomma }} across {{ g.n }} grants since {{ earliest_budget_year }}</span>
         </a>
         {% endfor %}
-    </div>
-</section>
-
-<section class="browse-section">
-    <h2>Biggest budget programs, {{ latest_budget_year }}</h2>
-    <div class="card-grid">
         {% for p in top_programs %}
         <a class="browse-card" href="{% url 'search' %}?q={{ p.program|urlencode }}">
             <span class="domain-tag budget">Budget</span>
@@ -62,12 +140,6 @@
             <span class="card-meta">${{ p.total_dollars|floatformat:0|intcomma }} in {{ latest_budget_year }} expenses</span>
         </a>
         {% endfor %}
-    </div>
-</section>
-
-<section class="browse-section">
-    <h2>Most-lobbied-for organizations</h2>
-    <div class="card-grid">
         {% for o in top_lobbied_orgs %}
         <a class="browse-card" href="{% url 'entity_detail' o.beneficiary__id %}">
             <span class="domain-tag lobbying">Lobbying</span>
@@ -76,5 +148,5 @@
         </a>
         {% endfor %}
     </div>
-    <p class="source-note">Registration counts reflect what's on file with the Toronto Lobbyist Registry, not a ranking of influence or wrongdoing.</p>
+    <p class="source-note">${{ total_grant_dollars|intword }} in community grants since {{ earliest_budget_year }}, {{ lobbying_registration_count|intcomma }} registered lobbying subjects on file. Lobbying registration counts reflect what's on file with the Toronto Lobbyist Registry, not a ranking of influence or wrongdoing.</p>
 </section>

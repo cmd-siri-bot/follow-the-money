@@ -7,6 +7,7 @@ from .models import FactBudgetLine
 from .taxonomy import (
     CATEGORY_ORDER,
     CATEGORY_PLAIN_ENGLISH,
+    CITY_CONTROLLED_REVENUE_BUCKETS,
     POLICY_AREA_ORDER,
     PROPERTY_TAX_RATE_HISTORY,
     REVENUE_BUCKET_DESCRIPTIONS,
@@ -33,7 +34,7 @@ def _bar_pct(value, max_value):
     return round(value / max_value * 100, 1) if max_value else 0
 
 
-def _policy_area_breakdown(year):
+def policy_area_breakdown(year):
     rows = (
         FactBudgetLine.objects.filter(fiscal_year=year, expense_or_revenue="Expenses")
         .values("program").annotate(total=Sum("amount_cents"))
@@ -119,6 +120,10 @@ def _program_changes(year_from, year_to):
 
     movers_eligible = [c for c in changes if c["before_dollars"] * 100 >= MOVER_MIN_BASE_CENTS]
     by_pct = sorted(movers_eligible, key=lambda r: r["pct_change"], reverse=True)
+    # Only genuine increases/decreases -- not just "the smallest of the increases"
+    # padded in to fill 5 slots when almost everything grew (or shrank).
+    pct_increases = [c for c in by_pct if c["pct_change"] > 0]
+    pct_decreases = [c for c in by_pct if c["pct_change"] < 0]
 
     def _entry(program, dollars):
         area = policy_area_for_program(program)
@@ -135,8 +140,8 @@ def _program_changes(year_from, year_to):
 
     return {
         "changes": changes,
-        "top_pct_increases": by_pct[:5],
-        "top_pct_decreases": list(reversed(by_pct[-5:])) if len(by_pct) >= 5 else [],
+        "top_pct_increases": pct_increases[:5],
+        "top_pct_decreases": list(reversed(pct_decreases[-5:])),
         "appeared": appeared,
         "disappeared": disappeared,
         "comparable_count": len(changes),
@@ -157,7 +162,7 @@ def _revenue_by_bucket(year):
     return by_bucket
 
 
-def _revenue_breakdown(year):
+def revenue_breakdown_display(year):
     by_bucket = _revenue_by_bucket(year)
     total = sum(by_bucket.values()) or 1
     max_v = max(by_bucket.values()) if by_bucket else 0
@@ -197,13 +202,85 @@ def overview(request):
         "latest_year": LATEST_YEAR,
         "prior_year": PRIOR_YEAR,
         "earliest_year": EARLIEST_YEAR,
-        "policy_areas": _policy_area_breakdown(LATEST_YEAR),
+        "policy_areas": policy_area_breakdown(LATEST_YEAR),
         "spending_types": _spending_type_breakdown(LATEST_YEAR),
         "yoy": _program_changes(PRIOR_YEAR, LATEST_YEAR),
         "since_2022": _program_changes(EARLIEST_YEAR, LATEST_YEAR),
-        "revenue_breakdown": _revenue_breakdown(LATEST_YEAR),
+        "revenue_breakdown": revenue_breakdown_display(LATEST_YEAR),
         "revenue_trend": revenue_trend,
         "property_tax_trend": next((r for r in revenue_trend if r["name"] == "Property Tax"), None),
         "tax_rate_history": PROPERTY_TAX_RATE_HISTORY,
     }
     return render(request, "budget/overview.html", context)
+
+
+# --- Reusable helpers, also used by the homepage (apps.entities.views) ---
+# Parameterized by year rather than hardcoded to EARLIEST_YEAR/LATEST_YEAR, since
+# the homepage needs a 2023-2025 window (the mayoral-transition reference point)
+# distinct from this page's own 2022-2025 default.
+
+def _policy_area_totals(year):
+    rows = (
+        FactBudgetLine.objects.filter(fiscal_year=year, expense_or_revenue="Expenses")
+        .values("program").annotate(total=Sum("amount_cents"))
+    )
+    by_area = defaultdict(int)
+    for r in rows:
+        by_area[policy_area_for_program(r["program"])] += r["total"]
+    return by_area
+
+
+def policy_area_changes(year_from, year_to):
+    """Policy-area-level spending change between two years -- coarser than
+    _program_changes' per-program table, sized for a homepage summary
+    rather than a full data page."""
+    before = _policy_area_totals(year_from)
+    after = _policy_area_totals(year_to)
+    rows = []
+    for area in POLICY_AREA_ORDER:
+        b, a = before.get(area, 0), after.get(area, 0)
+        if b <= 0:
+            continue
+        rows.append({
+            "name": area,
+            "hue": policy_area_hue(area),
+            "before_dollars": b / 100,
+            "after_dollars": a / 100,
+            "change_dollars": (a - b) / 100,
+            "pct_change": (a - b) / b * 100,
+        })
+    rows.sort(key=lambda r: r["change_dollars"], reverse=True)
+    return rows
+
+
+def revenue_bucket_trend_since(start_year, end_year=LATEST_YEAR):
+    per_year = {y: _revenue_by_bucket(y) for y in (start_year, end_year)}
+    out = []
+    for b in REVENUE_BUCKET_ORDER:
+        before = per_year[start_year].get(b, 0) / 100
+        after = per_year[end_year].get(b, 0) / 100
+        pct_change = round((after - before) / before * 100, 1) if before else None
+        out.append({
+            "name": b,
+            "description": REVENUE_BUCKET_DESCRIPTIONS[b],
+            "dollars_before": before,
+            "dollars_after": after,
+            "change_dollars": after - before,
+            "pct_change": pct_change,
+            "city_controlled": b in CITY_CONTROLLED_REVENUE_BUCKETS,
+        })
+    out.sort(key=lambda r: r["dollars_after"], reverse=True)
+    return out
+
+
+def property_tax_cumulative_rate_since(start_year):
+    """Compounds Council-approved rate increases (PROPERTY_TAX_RATE_HISTORY)
+    for years AFTER start_year -- the rate approved *in* start_year is the
+    increase into that year, not since it, so it's excluded from the product."""
+    multiplier = 1.0
+    included_years = []
+    for entry in PROPERTY_TAX_RATE_HISTORY:
+        if entry["year"] > start_year:
+            multiplier *= 1 + entry["increase_pct"] / 100
+            included_years.append(entry)
+    return {"cumulative_pct": round((multiplier - 1) * 100, 1), "years": included_years}

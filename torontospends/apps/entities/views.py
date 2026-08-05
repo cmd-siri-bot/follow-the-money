@@ -3,58 +3,88 @@ from django.shortcuts import get_object_or_404, render
 
 from apps.annotation.models import Correction
 from apps.budget.models import FactBudgetLine
+from apps.budget.taxonomy import (
+    MAYORAL_TRANSITION_NOTE,
+    MAYORAL_TRANSITION_SOURCE,
+    MAYORAL_TRANSITION_YEAR,
+)
+from apps.budget.views import (
+    LATEST_YEAR as LATEST_BUDGET_YEAR,
+    policy_area_breakdown,
+    policy_area_changes,
+    property_tax_cumulative_rate_since,
+    revenue_bucket_trend_since,
+    revenue_breakdown_display,
+)
 from apps.grants.models import FactGrant
 from apps.lobbying.models import FactLobbyingCommunication, FactLobbyingRegistration
 
 from .models import Entity
 
 RESULT_LIMIT = 25
-LATEST_BUDGET_YEAR = 2025  # keep in sync with apps/budget/management/commands/import_operating_budget.py RESOURCES
 EARLIEST_BUDGET_YEAR = 2022
-MOVER_MIN_BASE_CENTS = 500_000_000  # $5M -- below this, small programs produce noisy/meaningless % swings
 FEATURED_GRANT_PROGRAM_CODES = ["TAC", "CSP", "SNP", "YVP"]  # top 4 by dollar volume, per docs/08-decision-log.md's 2026-08-05 grant-cut decision
 
 
-def _budget_movers(limit=3):
-    """Biggest year-over-year budget changes, 2022 -> 2025. Only compares
-    programs present under the *same name* in both years -- programs that
-    were renamed or restructured (confirmed this happens, e.g. "311
-    Toronto" only appears in 2022-2023 data) would otherwise show a
-    misleading +/-100% swing that's really just an accounting artifact,
-    not a real funding decision. Also drops small-base programs, where a
-    tiny dollar change produces a huge, meaningless percentage."""
-    y22 = dict(
-        FactBudgetLine.objects.filter(fiscal_year=EARLIEST_BUDGET_YEAR, expense_or_revenue="Expenses")
-        .values_list("program").annotate(t=Sum("amount_cents")).values_list("program", "t")
-    )
-    y25 = dict(
-        FactBudgetLine.objects.filter(fiscal_year=LATEST_BUDGET_YEAR, expense_or_revenue="Expenses")
-        .values_list("program").annotate(t=Sum("amount_cents")).values_list("program", "t")
-    )
-    rows = []
-    for program in set(y22) & set(y25):
-        before, after = y22[program], y25[program]
-        if before < MOVER_MIN_BASE_CENTS:
-            continue
-        rows.append({
-            "program": program,
-            "before_dollars": before / 100,
-            "after_dollars": after / 100,
-            "pct_change": (after - before) / before * 100,
-        })
-    rows.sort(key=lambda r: r["pct_change"], reverse=True)
+def _the_big_picture():
+    """Total 2025 expenses, revenue, and net position -- the broad
+    overview a first-time visitor needs before anything else on the page
+    means much."""
+    total_expense_cents = FactBudgetLine.objects.filter(
+        fiscal_year=LATEST_BUDGET_YEAR, expense_or_revenue="Expenses"
+    ).aggregate(t=Sum("amount_cents"))["t"] or 0
+    total_revenue_cents = -(FactBudgetLine.objects.filter(
+        fiscal_year=LATEST_BUDGET_YEAR, expense_or_revenue="Revenues"
+    ).aggregate(t=Sum("amount_cents"))["t"] or 0)
     return {
-        "increases": rows[:limit],
-        "decreases": list(reversed(rows[-limit:])) if len(rows) >= limit else [],
-        "comparable_program_count": len(rows),
+        "total_budget_dollars": total_expense_cents / 100,
+        "total_revenue_dollars": total_revenue_cents / 100,
+        "net_dollars": (total_revenue_cents - total_expense_cents) / 100,
     }
 
 
+def _tax_bill_context():
+    """Property tax specifically, since 2023 -- the mayoral-term reference
+    point requested for the homepage, distinct from /budget's 2022 default."""
+    trend = revenue_bucket_trend_since(MAYORAL_TRANSITION_YEAR)
+    property_tax = next(r for r in trend if r["name"] == "Property Tax")
+    rate = property_tax_cumulative_rate_since(MAYORAL_TRANSITION_YEAR)
+    return {
+        "property_tax": property_tax,
+        "rate": rate,
+        "mayoral_transition_year": MAYORAL_TRANSITION_YEAR,
+        "mayoral_transition_note": MAYORAL_TRANSITION_NOTE,
+        "mayoral_transition_source": MAYORAL_TRANSITION_SOURCE,
+    }
+
+
+def _what_else_costs_more():
+    """Other City-controlled revenue (user fees, water/waste fees, other
+    taxes, fines) since 2023 -- property tax is covered separately above,
+    so excluded here. Provincial/federal transfers, reserve drawdowns,
+    and investment income are deliberately left out: the City doesn't set
+    those rates, so they don't answer "what am I paying more of.\""""
+    trend = revenue_bucket_trend_since(MAYORAL_TRANSITION_YEAR)
+    return [r for r in trend if r["city_controlled"] and r["name"] != "Property Tax"]
+
+
+def _where_new_money_went():
+    """Policy-area-level spending change since 2023 -- coarser than
+    /budget's per-program tables, sized for a homepage summary. Only
+    genuine decreases are shown as decreases -- not just "the smallest
+    increases" padded in to fill a fixed slot count, which would be
+    misleading in a window where almost every area grew."""
+    changes = policy_area_changes(MAYORAL_TRANSITION_YEAR, LATEST_BUDGET_YEAR)
+    increases = [c for c in changes if c["change_dollars"] > 0][:5]
+    decreases = sorted([c for c in changes if c["change_dollars"] < 0], key=lambda r: r["change_dollars"])[:5]
+    return {"increases": increases, "decreases": decreases}
+
+
 def _browse_context():
-    """Curated entry points for the homepage: the highest-dollar-volume
-    budget programs, the most-lobbied-for organizations, and the biggest
-    grant programs, so a visitor has something to click before they have
-    to know what to search for."""
+    """Curated entry points further down the homepage: the highest-dollar-
+    volume budget programs, the most-lobbied-for organizations, and the
+    biggest grant programs, so a visitor has something to click before
+    they have to know what to search for."""
     top_programs = list(
         FactBudgetLine.objects.filter(fiscal_year=LATEST_BUDGET_YEAR, expense_or_revenue="Expenses")
         .values("program")
@@ -80,16 +110,7 @@ def _browse_context():
     for g in top_grant_programs:
         g["total_dollars"] = g["total_cents"] / 100
 
-    total_2025_expense_cents = FactBudgetLine.objects.filter(
-        fiscal_year=LATEST_BUDGET_YEAR, expense_or_revenue="Expenses"
-    ).aggregate(t=Sum("amount_cents"))["t"] or 0
     total_grant_cents = FactGrant.objects.aggregate(t=Sum("amount_cents"))["t"] or 0
-
-    hero_stats = {
-        "total_budget_dollars": total_2025_expense_cents / 100,
-        "total_grant_dollars": total_grant_cents / 100,
-        "lobbying_registration_count": FactLobbyingRegistration.objects.count(),
-    }
 
     return {
         "top_programs": top_programs,
@@ -97,16 +118,30 @@ def _browse_context():
         "top_grant_programs": top_grant_programs,
         "latest_budget_year": LATEST_BUDGET_YEAR,
         "earliest_budget_year": EARLIEST_BUDGET_YEAR,
-        "hero_stats": hero_stats,
-        "movers": _budget_movers(),
+        "total_grant_dollars": total_grant_cents / 100,
+        "lobbying_registration_count": FactLobbyingRegistration.objects.count(),
     }
+
+
+def _home_context():
+    context = {
+        "latest_budget_year": LATEST_BUDGET_YEAR,
+        "big_picture": _the_big_picture(),
+        "policy_areas": policy_area_breakdown(LATEST_BUDGET_YEAR),
+        "revenue_breakdown": revenue_breakdown_display(LATEST_BUDGET_YEAR),
+        "tax_bill": _tax_bill_context(),
+        "other_costs": _what_else_costs_more(),
+        "funding_changes": _where_new_money_went(),
+    }
+    context.update(_browse_context())
+    return context
 
 
 def search(request):
     query = (request.GET.get("q") or "").strip()
 
     if not query:
-        context = _browse_context()
+        context = _home_context()
         template = "home/_fragment.html" if request.htmx else "home/index.html"
         return render(request, template, context)
 

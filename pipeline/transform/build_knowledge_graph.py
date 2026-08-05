@@ -65,7 +65,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from normalize_names import normalize_name, normalize_whitespace, normalize_postal, strip_accents_for_matching  # noqa: E402
+from normalize_names import normalize_name, normalize_whitespace, normalize_postal, strip_accents_for_matching, org_key  # noqa: E402
 from extract_role_name import extract_name_and_postal, classify_role_name, person_match_key  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -90,13 +90,6 @@ EDGE_FIELDS = ["edge_id", "source_id", "target_id", "edge_type", "date", "amount
 
 MAYOR_OFFICE_ALIASES = {"mayor", "mayors office", "office of the mayor"}
 NO_TERM_END = "9999-12-31"
-
-
-def org_key(name: str) -> str:
-    name = strip_accents_for_matching(normalize_whitespace(name or "")).lower()
-    name = re.sub(r"[^a-z0-9 ]", " ", name)
-    name = re.sub(r"\b(inc|incorporated|ltd|limited|corp|corporation|llp|lp|the|co)\b", " ", name)
-    return normalize_whitespace(name)
 
 
 def load_csv(path: Path):

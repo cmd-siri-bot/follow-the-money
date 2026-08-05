@@ -1,0 +1,229 @@
+{% load django_htmx %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TorontoSpends{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+    <style>
+        :root {
+            --ink: #1a1d1f;
+            --muted: #5c6266;
+            --border: #dfe1e3;
+            --bg: #fbfaf7;
+            --surface: #ffffff;
+            --accent: #0b4f8a;
+            --accent-ink: #06325a;
+            --accent-bg: #eaf2f9;
+
+            /* Restrained per-domain accents -- used sparingly as small tags,
+               not as backgrounds or borders everywhere. Budget stays the
+               primary accent blue since it's the site's default lens. */
+            --domain-budget: #0b4f8a;
+            --domain-budget-bg: #eaf2f9;
+            --domain-lobbying: #9a5b1f;
+            --domain-lobbying-bg: #faf1e6;
+            --domain-grants: #2d6a4f;
+            --domain-grants-bg: #eaf5ef;
+
+            --positive: #2d6a4f;
+            --negative: #a13f3f;
+
+            --radius-sm: 3px;
+            --radius-md: 8px;
+            --radius-lg: 14px;
+            --space-1: 0.5rem;
+            --space-2: 1rem;
+            --space-3: 1.5rem;
+            --space-4: 2.5rem;
+            --space-5: 4rem;
+            --shadow-sm: 0 1px 2px rgba(20, 20, 20, 0.05);
+            --shadow-md: 0 6px 20px -6px rgba(20, 20, 20, 0.16);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --ink: #ece9e2;
+                --muted: #a3a8ab;
+                --border: #33383b;
+                --bg: #16181a;
+                --surface: #1e2124;
+                --accent: #6fb3ec;
+                --accent-ink: #cfe6fa;
+                --accent-bg: #1c2c3a;
+                --domain-budget: #6fb3ec;
+                --domain-budget-bg: #1c2c3a;
+                --domain-lobbying: #e0a765;
+                --domain-lobbying-bg: #2e2418;
+                --domain-grants: #7fc8a4;
+                --domain-grants-bg: #17281f;
+                --positive: #7fc8a4;
+                --negative: #e58787;
+                --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+                --shadow-md: 0 10px 26px -8px rgba(0, 0, 0, 0.55);
+            }
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Inter", "Segoe UI", -apple-system, Helvetica, Arial, sans-serif;
+            color: var(--ink);
+            background: var(--bg);
+            line-height: 1.55;
+        }
+        h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; }
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: var(--space-2) var(--space-3);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            flex-wrap: wrap;
+        }
+        header a.brand {
+            font-family: "Fraunces", Georgia, serif;
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: var(--ink);
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+        header nav a {
+            color: var(--muted);
+            text-decoration: none;
+            margin-right: var(--space-2);
+            font-size: 0.9rem;
+        }
+        header nav a:hover { color: var(--accent); }
+        .search-form { flex: 1; min-width: 220px; max-width: 440px; margin-left: auto; }
+        .search-form input[type="search"] {
+            width: 100%;
+            padding: 0.6rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: var(--surface);
+            color: var(--ink);
+        }
+        .search-form input[type="search"]:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 1px;
+        }
+        main { max-width: 980px; margin: 0 auto; padding: var(--space-3); }
+        h1 { font-size: 2.3rem; margin: 0 0 0.4rem; line-height: 1.15; text-wrap: balance; letter-spacing: -0.01em; }
+        h2 { font-size: 1.3rem; margin-top: var(--space-5); margin-bottom: var(--space-1); border-bottom: 1px solid var(--border); padding-bottom: 0.45rem; }
+        .hero { padding: var(--space-3) 0 var(--space-3); }
+        .hero-sub { color: var(--muted); font-size: 1.1rem; max-width: 44em; margin: 0 0 var(--space-3); }
+
+        .hero-stats { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-3); }
+        .hero-stat .stat-value { font-family: "Fraunces", Georgia, serif; font-size: 2.1rem; font-weight: 600; line-height: 1; color: var(--ink); }
+        .hero-stat .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
+
+        .browse-section { margin-top: var(--space-5); }
+        .section-note { color: var(--muted); font-size: 0.9rem; margin-top: -0.25rem; margin-bottom: var(--space-1); }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: var(--space-2);
+            margin-top: var(--space-2);
+        }
+        .browse-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: var(--space-2) var(--space-2) 1.1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--surface);
+            text-decoration: none;
+            color: var(--ink);
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 150ms ease, transform 150ms ease;
+        }
+        .browse-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .browse-card .card-title { font-weight: 600; font-size: 1rem; }
+        .browse-card .card-meta { color: var(--muted); font-size: 0.85rem; }
+
+        .domain-tag {
+            display: inline-flex;
+            align-self: flex-start;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+        }
+        .domain-tag.budget { background: var(--domain-budget-bg); color: var(--domain-budget); }
+        .domain-tag.lobbying { background: var(--domain-lobbying-bg); color: var(--domain-lobbying); }
+        .domain-tag.grants { background: var(--domain-grants-bg); color: var(--domain-grants); }
+
+        .mover-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-2); margin-top: var(--space-2); }
+        .mover-card {
+            padding: var(--space-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+        }
+        .mover-card .mover-program { font-weight: 600; margin-bottom: 0.2rem; }
+        .mover-delta { font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; font-weight: 600; }
+        .mover-delta.positive { color: var(--positive); }
+        .mover-delta.negative { color: var(--negative); }
+        .mover-range { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
+
+        .entity-type-tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            background: var(--accent-bg);
+            color: var(--accent-ink);
+            padding: 0.1rem 0.45rem;
+            border-radius: var(--radius-sm);
+            margin-left: 0.4rem;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: var(--space-1);
+            border-radius: var(--radius-md);
+        }
+        table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+        th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; }
+        tbody tr:hover { background: var(--accent-bg); }
+        .result-list { list-style: none; padding: 0; margin: var(--space-1) 0; }
+        .result-list li { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+        .result-list a { color: var(--accent); text-decoration: none; font-weight: 600; }
+        .result-list a:hover { text-decoration: underline; }
+        .result-meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
+        .empty-state { color: var(--muted); font-style: italic; padding: var(--space-2) 0; }
+        .source-note { color: var(--muted); font-size: 0.8rem; margin-top: var(--space-1); }
+        a { color: var(--accent); }
+        a:visited { color: #6a4fa8; }
+        footer { max-width: 980px; margin: var(--space-5) auto var(--space-3); padding: 0 var(--space-3); color: var(--muted); font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <a class="brand" href="/">TorontoSpends</a>
+        <nav>
+            <a href="/">Search</a>
+        </nav>
+        <form class="search-form" action="{% url 'search' %}" method="get"
+              hx-get="{% url 'search' %}" hx-trigger="keyup changed delay:300ms, search" hx-target="#page-content" hx-push-url="true">
+            <input type="search" name="q" placeholder="Search budget, lobbying, entities..." value="{{ query|default:'' }}" autofocus>
+        </form>
+    </header>
+    <main id="page-content">
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        Every figure on this site links to its source and retrieval date. See methodology for data coverage and limitations.
+    </footer>
+</body>
+</html>

@@ -5,3 +5,11 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .env
+
+# TorontoSpends (Django)
+torontospends/db.sqlite3
+torontospends/staticfiles/
+
+# Local Claude Code state -- machine-specific, not for the shared repo
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

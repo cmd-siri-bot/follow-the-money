@@ -1,0 +1,80 @@
+{% load humanize %}
+<section class="hero">
+    <h1>Where does Toronto's money go?</h1>
+    <p class="hero-sub">Search the City's operating budget, lobbyist registry, and community grants, or start with one of the entries below.</p>
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <div class="stat-value">${{ hero_stats.total_budget_dollars|intword }}</div>
+            <div class="stat-label">tracked in the {{ latest_budget_year }} operating budget</div>
+        </div>
+        <div class="hero-stat">
+            <div class="stat-value">${{ hero_stats.total_grant_dollars|intword }}</div>
+            <div class="stat-label">in community grants since {{ earliest_budget_year }}</div>
+        </div>
+        <div class="hero-stat">
+            <div class="stat-value">{{ hero_stats.lobbying_registration_count|intcomma }}</div>
+            <div class="stat-label">registered lobbying subjects on file</div>
+        </div>
+    </div>
+</section>
+
+<section class="browse-section">
+    <h2>Budget shifts since {{ earliest_budget_year }}</h2>
+    <p class="section-note">Comparing {{ earliest_budget_year }} to {{ latest_budget_year }} approved budgets for the {{ movers.comparable_program_count }} programs that kept the same name across both years and had at least $5M in {{ earliest_budget_year }} &mdash; programs that were renamed or restructured in between aren't included, since the comparison wouldn't mean anything.</p>
+    <div class="mover-grid">
+        {% for m in movers.increases %}
+        <a class="mover-card" href="{% url 'search' %}?q={{ m.program|urlencode }}">
+            <div class="mover-program">{{ m.program }}</div>
+            <div class="mover-delta positive">&#9650; {{ m.pct_change|floatformat:0 }}%</div>
+            <div class="mover-range">${{ m.before_dollars|intword }} &rarr; ${{ m.after_dollars|intword }}</div>
+        </a>
+        {% endfor %}
+        {% for m in movers.decreases %}
+        <a class="mover-card" href="{% url 'search' %}?q={{ m.program|urlencode }}">
+            <div class="mover-program">{{ m.program }}</div>
+            <div class="mover-delta negative">&#9660; {{ m.pct_change|floatformat:0|cut:"-" }}%</div>
+            <div class="mover-range">${{ m.before_dollars|intword }} &rarr; ${{ m.after_dollars|intword }}</div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="browse-section">
+    <h2>Biggest grant programs</h2>
+    <div class="card-grid">
+        {% for g in top_grant_programs %}
+        <a class="browse-card" href="{% url 'search' %}?q={{ g.funding_program_name|default:g.funding_program_code|urlencode }}">
+            <span class="domain-tag grants">Grant</span>
+            <span class="card-title">{{ g.funding_program_name|default:g.funding_program_code }}</span>
+            <span class="card-meta">${{ g.total_dollars|floatformat:0|intcomma }} across {{ g.n }} grants since {{ earliest_budget_year }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="browse-section">
+    <h2>Biggest budget programs, {{ latest_budget_year }}</h2>
+    <div class="card-grid">
+        {% for p in top_programs %}
+        <a class="browse-card" href="{% url 'search' %}?q={{ p.program|urlencode }}">
+            <span class="domain-tag budget">Budget</span>
+            <span class="card-title">{{ p.program }}</span>
+            <span class="card-meta">${{ p.total_dollars|floatformat:0|intcomma }} in {{ latest_budget_year }} expenses</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="browse-section">
+    <h2>Most-lobbied-for organizations</h2>
+    <div class="card-grid">
+        {% for o in top_lobbied_orgs %}
+        <a class="browse-card" href="{% url 'entity_detail' o.beneficiary__id %}">
+            <span class="domain-tag lobbying">Lobbying</span>
+            <span class="card-title">{{ o.beneficiary__display_name }}</span>
+            <span class="card-meta">{{ o.n }} registered lobbying subject{{ o.n|pluralize }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    <p class="source-note">Registration counts reflect what's on file with the Toronto Lobbyist Registry, not a ranking of influence or wrongdoing.</p>
+</section>

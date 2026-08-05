@@ -26,6 +26,18 @@ ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,12
 
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
 
+# Render terminates TLS at its edge and forwards plain HTTP, so redirect/secure-cookie
+# settings are safe to turn on whenever DEBUG is off. HSTS starts at 1 hour rather than
+# the usual 1-year default -- raise it once the first deploy is confirmed stable, since
+# a bad HSTS value is hard for site visitors' browsers to walk back.
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 3600
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # Application definition
 

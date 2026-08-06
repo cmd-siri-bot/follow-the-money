@@ -221,7 +221,19 @@
         .bar-track { height: 8px; border-radius: 999px; background: var(--border); margin-top: 0.35rem; overflow: hidden; }
         .bar-fill { height: 100%; border-radius: 999px; background: var(--accent); }
         .bar-fill.revenue { background: var(--domain-revenue); }
+        .bar-fill.negative { background: var(--negative); }
         .bar-desc { color: var(--muted); font-size: 0.82rem; margin-top: 0.3rem; }
+
+        /* Click-to-expand program rows (budget YoY/since-2022 tables) --
+           category breakdown row starts hidden, toggled by JS at the
+           bottom of the page, no separate route or page load involved. */
+        .program-row { cursor: pointer; }
+        .row-expand-icon { display: inline-block; margin-right: 0.4rem; color: var(--muted); transition: transform 0.15s ease; }
+        .program-row.open .row-expand-icon { transform: rotate(90deg); }
+        .category-row { display: none; }
+        .category-row.open { display: table-row; }
+        .category-row td { background: var(--accent-bg); padding-top: var(--space-1); padding-bottom: var(--space-1); }
+        .category-breakdown .bar-row { padding: 0.4rem 0; }
 
         .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-3); margin-top: var(--space-2); }
         .pct-cell.positive, .stat-delta.positive { color: var(--positive); }

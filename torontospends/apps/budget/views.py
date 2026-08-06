@@ -92,6 +92,48 @@ def _totals_by_normalized_program(year):
     return totals, display_name
 
 
+def _totals_by_normalized_program_and_category(year):
+    """Same rollup as _totals_by_normalized_program, one level more granular
+    -- by expenditure category_name, the City's own 9-value taxonomy that's
+    confirmed stable across all four years (see taxonomy.py), unlike the
+    free-text commitment_item field. Powers the per-program category
+    breakdown on the YoY/since-2022 tables."""
+    rows = (
+        FactBudgetLine.objects.filter(fiscal_year=year, expense_or_revenue="Expenses")
+        .values("program", "category_name").annotate(total=Sum("amount_cents"))
+    )
+    totals = defaultdict(int)
+    for r in rows:
+        norm = normalize_program_name(r["program"])
+        totals[(norm, r["category_name"])] += r["total"]
+    return totals
+
+
+def _category_breakdown(norm, before_cat, after_cat):
+    """What changed inside one program's total, broken down by category_name.
+    Sized as a share of that program's own total movement (sum of |category
+    changes|), not the site-wide max -- so a small program's bar chart isn't
+    flattened to nothing next to Children's Services."""
+    cats = {k[1] for k in before_cat if k[0] == norm} | {k[1] for k in after_cat if k[0] == norm}
+    rows = []
+    for cat in cats:
+        b, a = before_cat.get((norm, cat), 0), after_cat.get((norm, cat), 0)
+        if b == 0 and a == 0:
+            continue
+        label, _ = CATEGORY_PLAIN_ENGLISH.get(cat, (cat, ""))
+        rows.append({
+            "label": label,
+            "before_dollars": b / 100,
+            "after_dollars": a / 100,
+            "change_dollars": (a - b) / 100,
+        })
+    rows.sort(key=lambda r: abs(r["change_dollars"]), reverse=True)
+    max_abs = max((abs(r["change_dollars"]) for r in rows), default=0) or 1
+    for r in rows:
+        r["bar_pct"] = round(abs(r["change_dollars"]) / max_abs * 100, 1)
+    return rows
+
+
 def _program_changes(year_from, year_to):
     """Every comparable program's change between two years, using normalized
     names (see apps/budget/taxonomy.py) so cosmetic renames aren't reported
@@ -99,6 +141,8 @@ def _program_changes(year_from, year_to):
     reported as appeared/disappeared -- not guessed at, not hidden."""
     before, before_names = _totals_by_normalized_program(year_from)
     after, after_names = _totals_by_normalized_program(year_to)
+    before_cat = _totals_by_normalized_program_and_category(year_from)
+    after_cat = _totals_by_normalized_program_and_category(year_to)
 
     common = set(before) & set(after)
     changes = []
@@ -115,6 +159,7 @@ def _program_changes(year_from, year_to):
             "after_dollars": a / 100,
             "change_dollars": (a - b) / 100,
             "pct_change": (a - b) / b * 100,
+            "category_breakdown": _category_breakdown(norm, before_cat, after_cat),
         })
     changes.sort(key=lambda r: abs(r["change_dollars"]), reverse=True)
 

@@ -88,17 +88,35 @@
 {% endif %}
 
 <h3>Every comparable program, {{ prior_year }} → {{ latest_year }}</h3>
+<p class="item-meta">Click a row to see the spending category (salaries, contracted services, materials, etc.) behind the change.</p>
 <div class="table-wrap">
     <table>
         <thead><tr><th>Program</th><th>Policy area</th><th>{{ prior_year }}</th><th>{{ latest_year }}</th><th>Change</th></tr></thead>
         <tbody>
             {% for c in yoy.changes %}
-            <tr>
-                <td>{{ c.program }}</td>
+            <tr class="program-row" tabindex="0">
+                <td><span class="row-expand-icon" aria-hidden="true">&#9656;</span>{{ c.program }}</td>
                 <td><span class="policy-tag" style="--tag-hue: {{ c.policy_area_hue }}">{{ c.policy_area }}</span></td>
                 <td>${{ c.before_dollars|floatformat:0|intcomma }}</td>
                 <td>${{ c.after_dollars|floatformat:0|intcomma }}</td>
                 <td class="pct-cell {% if c.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if c.change_dollars >= 0 %}+{% endif %}{{ c.pct_change|floatformat:1 }}%</td>
+            </tr>
+            <tr class="category-row">
+                <td colspan="5">
+                    <div class="bar-list category-breakdown">
+                        {% for cat in c.category_breakdown %}
+                        <div class="bar-row">
+                            <div class="bar-row-head">
+                                <span class="bar-row-name">{{ cat.label }}</span>
+                                <span class="bar-row-value pct-cell {% if cat.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if cat.change_dollars >= 0 %}+${{ cat.change_dollars|floatformat:0|intcomma }}{% else %}&minus;${{ cat.change_dollars|floatformat:0|intcomma|cut:"-" }}{% endif %}</span>
+                            </div>
+                            <div class="bar-track"><div class="bar-fill {% if cat.change_dollars < 0 %}negative{% endif %}" style="width: {{ cat.bar_pct }}%"></div></div>
+                        </div>
+                        {% empty %}
+                        <p class="item-meta">No category-level detail available for this program.</p>
+                        {% endfor %}
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -147,17 +165,35 @@
 {% endif %}
 
 <h3>Every comparable program, {{ earliest_year }} → {{ latest_year }}</h3>
+<p class="item-meta">Click a row to see the spending category (salaries, contracted services, materials, etc.) behind the change.</p>
 <div class="table-wrap">
     <table>
         <thead><tr><th>Program</th><th>Policy area</th><th>{{ earliest_year }}</th><th>{{ latest_year }}</th><th>Change</th></tr></thead>
         <tbody>
             {% for c in since_2022.changes %}
-            <tr>
-                <td>{{ c.program }}</td>
+            <tr class="program-row" tabindex="0">
+                <td><span class="row-expand-icon" aria-hidden="true">&#9656;</span>{{ c.program }}</td>
                 <td><span class="policy-tag" style="--tag-hue: {{ c.policy_area_hue }}">{{ c.policy_area }}</span></td>
                 <td>${{ c.before_dollars|floatformat:0|intcomma }}</td>
                 <td>${{ c.after_dollars|floatformat:0|intcomma }}</td>
                 <td class="pct-cell {% if c.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if c.change_dollars >= 0 %}+{% endif %}{{ c.pct_change|floatformat:1 }}%</td>
+            </tr>
+            <tr class="category-row">
+                <td colspan="5">
+                    <div class="bar-list category-breakdown">
+                        {% for cat in c.category_breakdown %}
+                        <div class="bar-row">
+                            <div class="bar-row-head">
+                                <span class="bar-row-name">{{ cat.label }}</span>
+                                <span class="bar-row-value pct-cell {% if cat.change_dollars >= 0 %}positive{% else %}negative{% endif %}">{% if cat.change_dollars >= 0 %}+${{ cat.change_dollars|floatformat:0|intcomma }}{% else %}&minus;${{ cat.change_dollars|floatformat:0|intcomma|cut:"-" }}{% endif %}</span>
+                            </div>
+                            <div class="bar-track"><div class="bar-fill {% if cat.change_dollars < 0 %}negative{% endif %}" style="width: {{ cat.bar_pct }}%"></div></div>
+                        </div>
+                        {% empty %}
+                        <p class="item-meta">No category-level detail available for this program.</p>
+                        {% endfor %}
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -213,4 +249,18 @@
     {% endfor %}
 </div>
 <p class="source-note">Rate figures are sourced from CBC News reporting on each year's Council budget vote, not from the operating budget dataset above — cited separately since they answer a different question (the approved <em>rate</em>) than the dollar totals do (total <em>revenue collected</em>). This site does not claim the two are the same thing.</p>
+<script>
+    document.querySelectorAll('.program-row').forEach(function (row) {
+        row.addEventListener('click', function () {
+            row.classList.toggle('open');
+            row.nextElementSibling.classList.toggle('open');
+        });
+        row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                row.click();
+            }
+        });
+    });
+</script>
 {% endblock %}

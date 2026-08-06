@@ -288,3 +288,14 @@ PROPERTY_TAX_RATE_HISTORY = [
     {"year": 2025, "increase_pct": 6.9, "note": "",
      "source_url": "https://www.cbc.ca/news/canada/toronto/toronto-2025-budget-council-meeting-1.7455475"},
 ]
+
+# City of Toronto population, 2021 Census of Population (last full census;
+# verified live 2026-08-06 against the StatCan profile table -- the City's
+# population has grown since, so any "per resident" figure built from this
+# modestly overstates the true current per-capita cost). Kept separate from
+# the budget dataset since it's sourced from StatCan, not open.toronto.ca.
+TORONTO_POPULATION_2021_CENSUS = 2_794_356
+TORONTO_POPULATION_SOURCE_URL = (
+    "https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/details/"
+    "page.cfm?Lang=E&GENDERlist=1&STATISTIClist=1&DGUIDlist=2021A00053520005&HEADERlist=0"
+)

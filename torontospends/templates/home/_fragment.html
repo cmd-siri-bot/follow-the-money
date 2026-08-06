@@ -1,7 +1,7 @@
 {% load humanize %}
 <section class="hero">
     <h1>Are you getting your money's worth?</h1>
-    <p class="hero-sub">Toronto's {{ latest_budget_year }} budget, its revenue, and how both have changed since 2023 — in plain numbers, sourced and dated, so you can weigh it yourself.</p>
+    <p class="hero-sub">Every dollar of Toronto's {{ latest_budget_year }} budget — where it goes, where it comes from, and how it's changed since 2023. Sourced, dated, and yours to weigh.</p>
     <div class="hero-stats">
         <div class="hero-stat">
             <div class="stat-value">${{ big_picture.total_budget_dollars|intword }}</div>
@@ -11,8 +11,21 @@
             <div class="stat-value">${{ big_picture.total_revenue_dollars|intword }}</div>
             <div class="stat-label">total {{ latest_budget_year }} revenue</div>
         </div>
+        <div class="hero-stat">
+            <div class="stat-value">${{ big_picture.cost_per_resident|intcomma }}</div>
+            <div class="stat-label">spent per resident in {{ latest_budget_year }}</div>
+        </div>
     </div>
-    <p class="source-note">These two totals aren't directly comparable line-for-line — see <a href="{% url 'methodology' %}">methodology</a> for why. Full breakdown on <a href="{% url 'budget_overview' %}">/budget</a>.</p>
+    <p class="source-note">These two totals aren't directly comparable line-for-line — see <a href="{% url 'methodology' %}">methodology</a> for why. Per-resident figure uses the <a href="{{ big_picture.population_source_url }}">2021 Census population</a> ({{ big_picture.population|intcomma }}) — Toronto has grown since, so this modestly overstates today's true per-capita cost. Full breakdown on <a href="{% url 'budget_overview' %}">/budget</a>.</p>
+    <div class="search-chips">
+        <span class="search-chips-label">Try:</span>
+        <a class="search-chip" href="{% url 'search' %}?q=police">Police</a>
+        <a class="search-chip" href="{% url 'search' %}?q=TTC">TTC</a>
+        <a class="search-chip" href="{% url 'search' %}?q=parks">Parks</a>
+        <a class="search-chip" href="{% url 'search' %}?q=bike+lane">Bike lanes</a>
+        <a class="search-chip" href="{% url 'search' %}?q=shelter">Shelters</a>
+        <a class="search-chip" href="{% url 'search' %}?q=child+care">Child care</a>
+    </div>
 </section>
 
 <section class="browse-section">

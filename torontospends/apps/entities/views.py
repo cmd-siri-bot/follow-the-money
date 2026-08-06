@@ -7,6 +7,8 @@ from apps.budget.taxonomy import (
     MAYORAL_TRANSITION_NOTE,
     MAYORAL_TRANSITION_SOURCE,
     MAYORAL_TRANSITION_YEAR,
+    TORONTO_POPULATION_2021_CENSUS,
+    TORONTO_POPULATION_SOURCE_URL,
 )
 from apps.budget.views import (
     LATEST_YEAR as LATEST_BUDGET_YEAR,
@@ -40,6 +42,9 @@ def _the_big_picture():
         "total_budget_dollars": total_expense_cents / 100,
         "total_revenue_dollars": total_revenue_cents / 100,
         "net_dollars": (total_revenue_cents - total_expense_cents) / 100,
+        "cost_per_resident": round((total_expense_cents / 100) / TORONTO_POPULATION_2021_CENSUS),
+        "population": TORONTO_POPULATION_2021_CENSUS,
+        "population_source_url": TORONTO_POPULATION_SOURCE_URL,
     }
 
 

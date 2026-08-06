@@ -119,14 +119,22 @@
             outline-offset: 1px;
         }
         main { max-width: 980px; margin: 0 auto; padding: var(--space-3); }
-        h1 { font-size: 2.3rem; margin: 0 0 0.4rem; line-height: 1.15; text-wrap: balance; letter-spacing: -0.01em; }
+        h1 { font-size: 2.75rem; margin: 0 0 0.5rem; line-height: 1.1; text-wrap: balance; letter-spacing: -0.02em; }
         h2 { font-size: 1.3rem; margin-top: var(--space-5); margin-bottom: var(--space-1); border-bottom: 1px solid var(--border); padding-bottom: 0.45rem; }
-        .hero { padding: var(--space-3) 0 var(--space-3); }
-        .hero-sub { color: var(--muted); font-size: 1.1rem; max-width: 44em; margin: 0 0 var(--space-3); }
+        .hero { padding: var(--space-4) 0 var(--space-3); }
+        .hero-sub { color: var(--muted); font-size: 1.2rem; max-width: 42em; margin: 0 0 var(--space-4); line-height: 1.5; }
 
-        .hero-stats { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-3); }
-        .hero-stat .stat-value { font-family: "Fraunces", Georgia, serif; font-size: 2.1rem; font-weight: 600; line-height: 1; color: var(--ink); }
-        .hero-stat .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
+        .hero-stats { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+        .hero-stat {
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+            min-width: 180px;
+        }
+        .hero-stat .stat-value { font-family: "Fraunces", Georgia, serif; font-size: 2.3rem; font-weight: 600; line-height: 1; color: var(--ink); }
+        .hero-stat .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 0.4rem; }
 
         .browse-section { margin-top: var(--space-5); }
         .section-note { color: var(--muted); font-size: 0.9rem; margin-top: -0.25rem; margin-bottom: var(--space-1); }
@@ -288,6 +296,25 @@
         a { color: var(--accent); }
         a:visited { color: #6a4fa8; }
         footer { max-width: 980px; margin: var(--space-5) auto var(--space-3); padding: 0 var(--space-3); color: var(--muted); font-size: 0.8rem; }
+        .footer-stack { margin-top: 0.35rem; }
+
+        /* Clickable example search queries -- real, verified terms, not
+           decoration (see home/_fragment.html). */
+        .search-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: var(--space-2); }
+        .search-chips-label { color: var(--muted); font-size: 0.85rem; margin-right: 0.1rem; }
+        .search-chip {
+            display: inline-flex;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--ink);
+            text-decoration: none;
+        }
+        .search-chip:visited { color: var(--ink); }
+        .search-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
     </style>
 </head>
 <body>
@@ -310,6 +337,7 @@
     </main>
     <footer>
         Every figure on this site links to its source and retrieval date. See <a href="{% url 'methodology' %}">methodology</a> for data coverage and limitations.
+        <div class="footer-stack">Built with Django, PostgreSQL, and htmx, on data from the <a href="https://open.toronto.ca/">City of Toronto Open Data Portal</a>. Deployed on Render.</div>
     </footer>
 </body>
 </html>

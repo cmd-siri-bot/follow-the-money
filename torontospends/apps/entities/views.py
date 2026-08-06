@@ -19,7 +19,6 @@ from apps.budget.views import (
     revenue_breakdown_display,
 )
 from apps.grants.models import FactGrant
-from apps.lobbying.models import FactLobbyingCommunication, FactLobbyingRegistration
 
 from .models import Entity
 
@@ -87,9 +86,8 @@ def _where_new_money_went():
 
 def _browse_context():
     """Curated entry points further down the homepage: the highest-dollar-
-    volume budget programs, the most-lobbied-for organizations, and the
-    biggest grant programs, so a visitor has something to click before
-    they have to know what to search for."""
+    volume budget programs and the biggest grant programs, so a visitor
+    has something to click before they have to know what to search for."""
     top_programs = list(
         FactBudgetLine.objects.filter(fiscal_year=LATEST_BUDGET_YEAR, expense_or_revenue="Expenses")
         .values("program")
@@ -98,13 +96,6 @@ def _browse_context():
     )
     for p in top_programs:
         p["total_dollars"] = p["total_cents"] / 100
-
-    top_lobbied_orgs = (
-        FactLobbyingRegistration.objects.exclude(beneficiary__isnull=True)
-        .values("beneficiary__id", "beneficiary__display_name")
-        .annotate(n=Count("id"))
-        .order_by("-n")[:9]
-    )
 
     top_grant_programs = list(
         FactGrant.objects.filter(funding_program_code__in=FEATURED_GRANT_PROGRAM_CODES)
@@ -119,12 +110,10 @@ def _browse_context():
 
     return {
         "top_programs": top_programs,
-        "top_lobbied_orgs": top_lobbied_orgs,
         "top_grant_programs": top_grant_programs,
         "latest_budget_year": LATEST_BUDGET_YEAR,
         "earliest_budget_year": EARLIEST_BUDGET_YEAR,
         "total_grant_dollars": total_grant_cents / 100,
-        "lobbying_registration_count": FactLobbyingRegistration.objects.count(),
     }
 
 
@@ -161,16 +150,6 @@ def search(request):
         | Q(category_name__icontains=query)
     ).order_by("-fiscal_year")[:RESULT_LIMIT]
 
-    registrations = FactLobbyingRegistration.objects.select_related(
-        "registrant", "beneficiary", "firm"
-    ).filter(
-        Q(subject_matter__icontains=query)
-        | Q(particulars__icontains=query)
-        | Q(registrant__display_name__icontains=query)
-        | Q(beneficiary__display_name__icontains=query)
-        | Q(firm__display_name__icontains=query)
-    ).order_by("-effective_date")[:RESULT_LIMIT]
-
     grants = FactGrant.objects.select_related("recipient").filter(
         Q(recipient_name_raw__icontains=query)
         | Q(funding_program_name__icontains=query)
@@ -182,9 +161,8 @@ def search(request):
         "query": query,
         "entities": entities,
         "budget_lines": budget_lines,
-        "registrations": registrations,
         "grants": grants,
-        "has_results": bool(entities or budget_lines or registrations or grants),
+        "has_results": bool(entities or budget_lines or grants),
     }
 
     # HTMX live-search requests only need the results fragment re-swapped
@@ -196,32 +174,10 @@ def search(request):
 def entity_detail(request, entity_id):
     entity = get_object_or_404(Entity, pk=entity_id)
 
-    registrations_as_registrant = FactLobbyingRegistration.objects.select_related("beneficiary", "firm").filter(
-        registrant=entity
-    ).order_by("-effective_date")
-    registrations_as_beneficiary = FactLobbyingRegistration.objects.select_related("registrant", "firm").filter(
-        beneficiary=entity
-    ).order_by("-effective_date")
-    registrations_as_firm = FactLobbyingRegistration.objects.select_related("registrant", "beneficiary").filter(
-        firm=entity
-    ).order_by("-effective_date")
-
-    communications_as_poh = FactLobbyingCommunication.objects.select_related("registration").filter(
-        poh_entity=entity
-    ).order_by("-communication_date")[:RESULT_LIMIT]
-    communications_as_lobbyist = FactLobbyingCommunication.objects.select_related("registration").filter(
-        lobbyist_entity=entity
-    ).order_by("-communication_date")[:RESULT_LIMIT]
-
     grants_received = FactGrant.objects.filter(recipient=entity).order_by("-fiscal_year")
 
     context = {
         "entity": entity,
-        "registrations_as_registrant": registrations_as_registrant,
-        "registrations_as_beneficiary": registrations_as_beneficiary,
-        "registrations_as_firm": registrations_as_firm,
-        "communications_as_poh": communications_as_poh,
-        "communications_as_lobbyist": communications_as_lobbyist,
         "grants_received": grants_received,
     }
     return render(request, "entities/detail.html", context)
@@ -237,18 +193,6 @@ DATASETS = [
         "queryset": FactBudgetLine.objects,
         "source_url": "https://open.toronto.ca/dataset/budget-operating-budget-program-summary-by-expenditure-category/",
         "known_issue": "The City's own file was last refreshed 2026-02-25, and no FY2026 file has been published yet -- this site can't be fresher than its source.",
-    },
-    {
-        "label": "Lobbying registrations",
-        "queryset": FactLobbyingRegistration.objects,
-        "source_url": "https://open.toronto.ca/dataset/lobbyist-registry/",
-        "known_issue": "",
-    },
-    {
-        "label": "Lobbying communications",
-        "queryset": FactLobbyingCommunication.objects,
-        "source_url": "https://open.toronto.ca/dataset/lobbyist-registry/",
-        "known_issue": "",
     },
     {
         "label": "Community grants",

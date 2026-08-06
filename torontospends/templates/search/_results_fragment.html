@@ -2,7 +2,7 @@
 <h1>{% if query %}Results for &ldquo;{{ query }}&rdquo;{% else %}Search TorontoSpends{% endif %}</h1>
 
 {% if query and not has_results %}
-    <p class="empty-state">No matches in budget lines, lobbying records, grants, or entities.</p>
+    <p class="empty-state">No matches in budget lines, grants, or entities.</p>
     <p><a href="{% url 'search' %}">Browse the biggest programs and organizations instead &rarr;</a></p>
 {% endif %}
 
@@ -16,26 +16,6 @@
     </li>
     {% endfor %}
 </ul>
-{% endif %}
-
-{% if registrations %}
-<h2>Lobbying registrations</h2>
-<div class="table-wrap">
-<table>
-    <tr><th>Registrant</th><th>Type</th><th>Beneficiary</th><th>Firm</th><th>Subject matter</th><th>Effective</th></tr>
-    {% for r in registrations %}
-    <tr>
-        <td>{% if r.registrant %}<a href="{% url 'entity_detail' r.registrant.pk %}">{{ r.registrant.display_name }}</a>{% endif %}</td>
-        <td>{{ r.registrant_type }}</td>
-        <td>{% if r.beneficiary %}<a href="{% url 'entity_detail' r.beneficiary.pk %}">{{ r.beneficiary.display_name }}</a>{% else %}&mdash;{% endif %}</td>
-        <td>{% if r.firm %}<a href="{% url 'entity_detail' r.firm.pk %}">{{ r.firm.display_name }}</a>{% else %}&mdash;{% endif %}</td>
-        <td>{{ r.subject_matter|truncatechars:60 }}</td>
-        <td>{{ r.effective_date|default:"—" }}</td>
-    </tr>
-    {% endfor %}
-</table>
-</div>
-<p class="source-note">Source: Toronto Lobbyist Registry. Contact counts reflect what registrants voluntarily filed, not a complete record of all contact.</p>
 {% endif %}
 
 {% if grants %}

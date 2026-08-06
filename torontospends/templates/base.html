@@ -24,8 +24,6 @@
                primary accent blue since it's the site's default lens. */
             --domain-budget: #0b4f8a;
             --domain-budget-bg: #eaf2f9;
-            --domain-lobbying: #9a5b1f;
-            --domain-lobbying-bg: #faf1e6;
             --domain-grants: #2d6a4f;
             --domain-grants-bg: #eaf5ef;
             --domain-revenue: #6a4fa8;
@@ -57,8 +55,6 @@
                 --accent-bg: #1c2c3a;
                 --domain-budget: #6fb3ec;
                 --domain-budget-bg: #1c2c3a;
-                --domain-lobbying: #e0a765;
-                --domain-lobbying-bg: #2e2418;
                 --domain-grants: #7fc8a4;
                 --domain-grants-bg: #17281f;
                 --domain-revenue: #b09ee0;
@@ -172,7 +168,6 @@
             border-radius: 999px;
         }
         .domain-tag.budget { background: var(--domain-budget-bg); color: var(--domain-budget); }
-        .domain-tag.lobbying { background: var(--domain-lobbying-bg); color: var(--domain-lobbying); }
         .domain-tag.grants { background: var(--domain-grants-bg); color: var(--domain-grants); }
 
         .mover-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-2); margin-top: var(--space-2); }
@@ -321,7 +316,6 @@
     <header>
         <a class="brand" href="/">TorontoSpends</a>
         <nav>
-            <a href="{% url 'lobbying_overview' %}">Lobbying</a>
             <a href="{% url 'budget_overview' %}">Budget</a>
             <a href="{% url 'methodology' %}">Methodology</a>
             <a href="{% url 'status' %}">Status</a>
@@ -329,7 +323,7 @@
         </nav>
         <form class="search-form" action="{% url 'search' %}" method="get"
               hx-get="{% url 'search' %}" hx-trigger="keyup changed delay:300ms, search" hx-target="#page-content" hx-push-url="true">
-            <input type="search" name="q" placeholder="Search budget, lobbying, entities..." value="{{ query|default:'' }}" autofocus>
+            <input type="search" name="q" placeholder="Search budget, grants, entities..." value="{{ query|default:'' }}" autofocus>
         </form>
     </header>
     <main id="page-content">

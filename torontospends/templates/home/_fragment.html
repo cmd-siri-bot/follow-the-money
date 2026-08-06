@@ -153,13 +153,6 @@
             <span class="card-meta">${{ p.total_dollars|floatformat:0|intcomma }} in {{ latest_budget_year }} expenses</span>
         </a>
         {% endfor %}
-        {% for o in top_lobbied_orgs %}
-        <a class="browse-card" href="{% url 'entity_detail' o.beneficiary__id %}">
-            <span class="domain-tag lobbying">Lobbying</span>
-            <span class="card-title">{{ o.beneficiary__display_name }}</span>
-            <span class="card-meta">{{ o.n }} registered lobbying subject{{ o.n|pluralize }}</span>
-        </a>
-        {% endfor %}
     </div>
-    <p class="source-note">${{ total_grant_dollars|intword }} in community grants since {{ earliest_budget_year }}, {{ lobbying_registration_count|intcomma }} registered lobbying subjects on file. Lobbying registration counts reflect what's on file with the Toronto Lobbyist Registry, not a ranking of influence or wrongdoing.</p>
+    <p class="source-note">${{ total_grant_dollars|intword }} in community grants since {{ earliest_budget_year }}.</p>
 </section>

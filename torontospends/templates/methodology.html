@@ -3,7 +3,7 @@
 {% block content %}
 <div class="hero">
     <h1>Methodology</h1>
-    <p class="hero-sub">TorontoSpends lets you search and cross-reference the City of Toronto's operating budget and community grants through one shared set of organizations and people.</p>
+    <p class="hero-sub">TorontoSpends lets you search and cross-reference the City of Toronto's operating budget, community grants, and (as a pilot) Council/Committee decisions.</p>
 </div>
 
 <h2>Data sources</h2>
@@ -31,6 +31,13 @@
 <p><strong>Program name matching across years</strong> only resolves purely cosmetic renames — word-order changes, pluralization, "Office of X" ↔ "X" phrasing (e.g. "Fire Services" → "Toronto Fire Services", the 2024 renaming of Yonge-Dundas Square to Sankofa Square). Where a department's name changed by more than that — for example whether "Office of the Controller" (2022–2024) became "Financial Operations and Control" (2025), or is a genuine reorganization — this site does not guess. Both names appear separately in the appeared/disappeared lists so a reader can judge for themselves.</p>
 <p><strong>Revenue sources</strong> are built from the City's fine-grained revenue line items (its own revenue categories put almost everything, including the entire property tax levy, into one "Other Revenue" bucket, which isn't useful). Line items are matched into buckets like "Property Tax" or "Provincial Transfers" by keyword rules, because the underlying line-item labels themselves aren't spelled consistently year to year (e.g. "Municipal Land Transfer Tax" in one year's file, "Mun Land Transfer Ta" in another) — an exact-string match would silently undercount. Every year's bucket totals are checked to reconcile exactly to the City's true reported revenue total before publishing.</p>
 <p><strong>Property tax rate figures</strong> (the "+2.9%", "+9.5%" etc. shown on the budget page) are not from the operating budget dataset at all — they're Council-approved residential rate increases as reported by CBC News, cited separately because the budget file only reports total dollars collected, not the approved rate. Dollar growth in the property tax levy reflects both the rate and a growing tax base (new construction, rising assessments); this site does not claim the two are the same number.</p>
+
+<h2>How council/committee search works</h2>
+<p>The <a href="{% url 'council_search' %}">Council page</a> searches City Council and Committee agenda items, sourced from each item's official "item history" page on the City's own TMMIS system (secure.toronto.ca/council) — the City Clerk's own record of an item's status, decision text, and full lifecycle across every body that considered it.</p>
+<p><strong>Pilot coverage, not the full archive: Executive Committee only, 2024–present.</strong> This is an early pilot, not a complete record — most committees, Community Councils, and City Council's own separate omnibus agendas are not yet ingested. Because each item's consolidated history page already includes the final City Council decision text (when applicable) even when the item routed through a committee, this pilot's Executive Committee coverage does capture City Council–level outcomes for the items it includes — just not every item Council considered directly.</p>
+<p><strong>Results are extractive, not AI-generated.</strong> What's shown is the Clerk's own tracking-status and decision text, verbatim, not a summary this site wrote. No LLM is involved in producing these results.</p>
+<p><strong>A search for a public nickname may not find anything even if the topic is covered</strong> — official decision text uses formal language, not colloquial names. This site maintains a small, hand-verified list of known nickname-to-keyword mappings (<code>apps/council/taxonomy.py</code>'s <code>TOPIC_ALIASES</code> — e.g. "rain tax" → "stormwater charge") rather than guessing at scale; a topic not on that list needs its own formal-language search terms.</p>
+<p><strong>"Reported by" citations are separate from the official record</strong> and hand-curated, not automatically scraped — the official Clerk's record states what was decided, not necessarily why (e.g. public reaction). Where narrative context like that is shown, it's attributed to a specific, cited news source, never blended into the official-record text as if the City itself said it.</p>
 
 <h2>Limitations — read this before citing a number from this site</h2>
 <ul>

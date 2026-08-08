@@ -55,11 +55,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "django_htmx",
+    "django.contrib.postgres",
     "apps.entities",
     "apps.budget",
     "apps.lobbying",
     "apps.grants",
     "apps.annotation",
+    "apps.council",
 ]
 
 MIDDLEWARE = [

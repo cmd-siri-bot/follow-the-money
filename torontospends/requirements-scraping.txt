@@ -1,0 +1,9 @@
+# Council agenda ingestion is a manual/offline step, not part of the live
+# Render web app -- see apps/council. secure.toronto.ca is Akamai-protected
+# against plain HTTP clients (verified 2026-08-06: requests/curl get 403
+# even with full browser headers), so scraping needs a real browser.
+# Install with: pip install -r requirements-scraping.txt && playwright install chromium
+-r requirements.txt
+playwright==1.49.1
+beautifulsoup4==4.15.0
+lxml==6.0.2

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{% if query %}"{{ query }}" — {% endif %}Council & Committees — TorontoSpends{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>What's the status of a policy?</h1>
+    <p class="hero-sub">Search City Council and Committee decisions since 2022. Results show the City Clerk's own tracking status and decision text, verbatim — not an AI-written summary. <strong>Pilot coverage: Executive Committee only, 2024–present.</strong> See <a href="{% url 'methodology' %}">methodology</a> for scope and limitations.</p>
+</div>
+
+<form class="search-form" action="{% url 'council_search' %}" method="get" style="max-width: 40em; margin: 0 0 var(--space-3);">
+    <input type="search" name="q" placeholder="e.g. rain tax, basement flooding, stormwater" value="{{ query|default:'' }}" autofocus>
+</form>
+
+{% if query and not results %}
+<p class="empty-state">No matches in the pilot's coverage (Executive Committee, 2024–present). This doesn't mean nothing happened — the full archive isn't built yet.</p>
+{% endif %}
+
+{% for item in results %}
+<div class="browse-card" style="margin-bottom: var(--space-2); cursor: default;">
+    <span class="card-title">{{ item.item_id }} — {{ item.title }}</span>
+    <p><strong>Official record:</strong> {{ item.tracking_status_text }}</p>
+    {% if item.decision_text %}
+    <p>{{ item.decision_text|truncatewords:80 }}</p>
+    {% endif %}
+    {% if item.news_citations.all %}
+    <p class="source-note"><strong>Reported by:</strong>
+        {% for n in item.news_citations.all %}<a href="{{ n.url }}">{{ n.publisher }}{% if n.published_date %}, {{ n.published_date|date:"M Y" %}{% endif %}</a>{% if not forloop.last %}; {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+    <p class="source-note"><a href="{{ item.source_url }}">Source: TMMIS item history</a> — retrieved {{ item.retrieved_at|date:"Y-m-d" }}</p>
+</div>
+{% endfor %}
+{% endblock %}
